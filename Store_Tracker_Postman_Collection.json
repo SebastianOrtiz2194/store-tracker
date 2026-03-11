@@ -1,0 +1,113 @@
+{
+	"info": {
+		"_postman_id": "7a3b1c2d-4e5f-6a7b-8c9d-0e1f2a3b4c5d",
+		"name": "Store Tracker API",
+		"description": "Colección para probar el microservicio de registro de visitas y compras.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "1. Registrar Entrada",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"personName\": \"Juan Pérez\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/visits/enter",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"visits",
+						"enter"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "2. Listar Personas Actualmente Adentro",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/visits/active",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"visits",
+						"active"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "3. Registrar Salida y Compra",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"purchasedItems\": \"Camisa Azul, Pantalón Jean\",\r\n    \"totalSpent\": 75.90\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/visits/1/leave",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"visits",
+						"1",
+						"leave"
+					],
+					"description": "Nota: El '1' es el ID de la visita. Asegúrate de usar el ID que recibiste al registrar la entrada."
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "4. Ver Historial Completo",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/visits",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"visits"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
