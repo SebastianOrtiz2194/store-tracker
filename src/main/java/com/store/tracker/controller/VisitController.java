@@ -1,54 +1,61 @@
 package com.store.tracker.controller;
 
-import com.store.tracker.model.Visit;
-import com.store.tracker.repository.VisitRepository;
+import com.store.tracker.dto.ApiResponse;
+import com.store.tracker.dto.VisitEntryRequest;
+import com.store.tracker.dto.VisitLeaveRequest;
+import com.store.tracker.dto.VisitResponse;
+import com.store.tracker.service.VisitService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
+/**
+ * Controlador REST para la gestión de visitas.
+ * Ahora es una capa delegadora delgada ("thin controller"), 
+ * cumpliendo con el estándar de arquitectura por capas.
+ */
 @RestController
 @RequestMapping("/api/visits")
 public class VisitController {
 
     @Autowired
-    private VisitRepository visitRepository;
+    private VisitService visitService;
 
     // 1. Registrar una persona que entra al establecimiento
     @PostMapping("/enter")
-    public Visit registerEntry(@RequestBody Visit request) {
-        Visit visit = new Visit(request.getPersonName(), LocalDateTime.now());
-        return visitRepository.save(visit);
+    public ResponseEntity<ApiResponse<VisitResponse>> registerEntry(@RequestBody VisitEntryRequest request) {
+        VisitResponse response = visitService.registerEntry(request);
+        return ResponseEntity.ok(ApiResponse.success(response, "Entrada registrada con éxito"));
     }
 
     // 2. Registrar salida de la persona y qué compró
     @PutMapping("/{id}/leave")
-    public ResponseEntity<Visit> registerExit(@PathVariable Long id, @RequestBody Visit request) {
-        Optional<Visit> optionalVisit = visitRepository.findById(id);
+    public ResponseEntity<ApiResponse<VisitResponse>> registerExit(
+            @PathVariable Long id, 
+            @RequestBody VisitLeaveRequest request) {
         
-        if (optionalVisit.isPresent()) {
-            Visit visit = optionalVisit.get();
-            visit.setExitTime(LocalDateTime.now());
-            visit.setPurchasedItems(request.getPurchasedItems());
-            visit.setTotalSpent(request.getTotalSpent());
-            return ResponseEntity.ok(visitRepository.save(visit));
+        VisitResponse response = visitService.registerExit(id, request);
+        
+        if (response != null) {
+            return ResponseEntity.ok(ApiResponse.success(response, "Salida registrada con éxito"));
         } else {
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.status(404).body(ApiResponse.error("Visita no encontrada con ID: " + id));
         }
     }
 
     // 3. Ver todas las visitas registradas (historial completo)
     @GetMapping
-    public List<Visit> getAllVisits() {
-        return visitRepository.findAll();
+    public ResponseEntity<ApiResponse<List<VisitResponse>>> getAllVisits() {
+        List<VisitResponse> visits = visitService.getAllVisits();
+        return ResponseEntity.ok(ApiResponse.success(visits, "Lista de visitas obtenida"));
     }
 
     // 4. Ver qué personas están actualmente dentro del establecimiento (sin hora de salida)
     @GetMapping("/active")
-    public List<Visit> getActiveVisits() {
-        return visitRepository.findByExitTimeIsNull();
+    public ResponseEntity<ApiResponse<List<VisitResponse>>> getActiveVisits() {
+        List<VisitResponse> visits = visitService.getActiveVisits();
+        return ResponseEntity.ok(ApiResponse.success(visits, "Lista de visitas activas obtenida"));
     }
 }

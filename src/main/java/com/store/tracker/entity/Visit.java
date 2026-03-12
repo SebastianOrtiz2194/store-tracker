@@ -1,4 +1,4 @@
-package com.store.tracker.model;
+package com.store.tracker.entity;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
