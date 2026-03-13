@@ -4,6 +4,7 @@ import com.store.tracker.dto.VisitEntryRequest;
 import com.store.tracker.dto.VisitLeaveRequest;
 import com.store.tracker.dto.VisitResponse;
 import com.store.tracker.entity.Visit;
+import com.store.tracker.exception.VisitNotFoundException;
 import com.store.tracker.mapper.VisitMapper;
 import com.store.tracker.repository.VisitRepository;
 import com.store.tracker.service.VisitService;
@@ -33,15 +34,13 @@ public class VisitServiceImpl implements VisitService {
 
     @Override
     public VisitResponse registerExit(Long id, VisitLeaveRequest request) {
-        // En esta fase, si no existe devolvemos null. 
-        // En la Fase 2 implementaremos excepciones personalizadas.
         return visitRepository.findById(id).map(visit -> {
             visit.setExitTime(LocalDateTime.now());
             visit.setPurchasedItems(request.getPurchasedItems());
             visit.setTotalSpent(request.getTotalSpent());
             Visit updatedVisit = visitRepository.save(visit);
             return VisitMapper.toResponse(updatedVisit);
-        }).orElse(null);
+        }).orElseThrow(() -> new VisitNotFoundException("No se encontró la visita con ID: " + id));
     }
 
     @Override

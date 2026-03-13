@@ -5,6 +5,7 @@ import com.store.tracker.dto.VisitEntryRequest;
 import com.store.tracker.dto.VisitLeaveRequest;
 import com.store.tracker.dto.VisitResponse;
 import com.store.tracker.service.VisitService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -25,7 +26,7 @@ public class VisitController {
 
     // 1. Registrar una persona que entra al establecimiento
     @PostMapping("/enter")
-    public ResponseEntity<ApiResponse<VisitResponse>> registerEntry(@RequestBody VisitEntryRequest request) {
+    public ResponseEntity<ApiResponse<VisitResponse>> registerEntry(@Valid @RequestBody VisitEntryRequest request) {
         VisitResponse response = visitService.registerEntry(request);
         return ResponseEntity.ok(ApiResponse.success(response, "Entrada registrada con éxito"));
     }
@@ -34,15 +35,10 @@ public class VisitController {
     @PutMapping("/{id}/leave")
     public ResponseEntity<ApiResponse<VisitResponse>> registerExit(
             @PathVariable Long id, 
-            @RequestBody VisitLeaveRequest request) {
+            @Valid @RequestBody VisitLeaveRequest request) {
         
         VisitResponse response = visitService.registerExit(id, request);
-        
-        if (response != null) {
-            return ResponseEntity.ok(ApiResponse.success(response, "Salida registrada con éxito"));
-        } else {
-            return ResponseEntity.status(404).body(ApiResponse.error("Visita no encontrada con ID: " + id));
-        }
+        return ResponseEntity.ok(ApiResponse.success(response, "Salida registrada con éxito"));
     }
 
     // 3. Ver todas las visitas registradas (historial completo)
