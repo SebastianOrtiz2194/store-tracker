@@ -3,6 +3,7 @@ package com.store.tracker.service.impl;
 import com.store.tracker.dto.VisitEntryRequest;
 import com.store.tracker.dto.VisitLeaveRequest;
 import com.store.tracker.dto.VisitResponse;
+import com.store.tracker.entity.PurchasedItem;
 import com.store.tracker.entity.Visit;
 import com.store.tracker.exception.VisitNotFoundException;
 import com.store.tracker.mapper.VisitMapper;
@@ -10,6 +11,7 @@ import com.store.tracker.repository.VisitRepository;
 import com.store.tracker.service.VisitService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -17,7 +19,6 @@ import java.util.stream.Collectors;
 
 /**
  * Implementación de la capa de servicio para Visit.
- * Aquí reside la lógica de negocio, fuera del controlador.
  */
 @Service
 public class VisitServiceImpl implements VisitService {
@@ -26,6 +27,7 @@ public class VisitServiceImpl implements VisitService {
     private VisitRepository visitRepository;
 
     @Override
+    @Transactional
     public VisitResponse registerEntry(VisitEntryRequest request) {
         Visit visit = new Visit(request.getPersonName(), LocalDateTime.now());
         Visit savedVisit = visitRepository.save(visit);
@@ -33,10 +35,22 @@ public class VisitServiceImpl implements VisitService {
     }
 
     @Override
+    @Transactional
     public VisitResponse registerExit(Long id, VisitLeaveRequest request) {
         return visitRepository.findById(id).map(visit -> {
             visit.setExitTime(LocalDateTime.now());
-            visit.setPurchasedItems(request.getPurchasedItems());
+            
+            // Limpiar items existentes si hubiera (aunque en este flujo solo se registran al salir)
+            visit.getPurchasedItems().clear();
+            
+            // Mapear y añadir los nuevos items
+            if (request.getPurchasedItems() != null) {
+                request.getPurchasedItems().forEach(itemDto -> {
+                    PurchasedItem item = VisitMapper.toItemEntity(itemDto, visit);
+                    visit.addPurchasedItem(item);
+                });
+            }
+            
             visit.setTotalSpent(request.getTotalSpent());
             Visit updatedVisit = visitRepository.save(visit);
             return VisitMapper.toResponse(updatedVisit);
@@ -44,6 +58,7 @@ public class VisitServiceImpl implements VisitService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<VisitResponse> getAllVisits() {
         return visitRepository.findAll().stream()
                 .map(VisitMapper::toResponse)
@@ -51,6 +66,7 @@ public class VisitServiceImpl implements VisitService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<VisitResponse> getActiveVisits() {
         return visitRepository.findByExitTimeIsNull().stream()
                 .map(VisitMapper::toResponse)

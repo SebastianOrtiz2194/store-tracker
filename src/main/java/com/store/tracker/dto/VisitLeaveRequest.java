@@ -1,15 +1,20 @@
 package com.store.tracker.dto;
 
-import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
+import java.util.List;
 
 /**
  * DTO para la solicitud de salida y registro de compras.
+ * Ahora incluye una lista de artículos normalizada.
  */
 public class VisitLeaveRequest {
-    @NotBlank(message = "Los artículos comprados no pueden estar vacíos")
-    private String purchasedItems;
+    
+    @NotEmpty(message = "Debe registrar al menos un artículo comprado")
+    @Valid
+    private List<PurchasedItemDto> purchasedItems;
 
     @NotNull(message = "El monto total gastado es requerido")
     @PositiveOrZero(message = "El monto total debe ser cero o positivo")
@@ -17,8 +22,8 @@ public class VisitLeaveRequest {
 
     public VisitLeaveRequest() {}
 
-    public String getPurchasedItems() { return purchasedItems; }
-    public void setPurchasedItems(String purchasedItems) { this.purchasedItems = purchasedItems; }
+    public List<PurchasedItemDto> getPurchasedItems() { return purchasedItems; }
+    public void setPurchasedItems(List<PurchasedItemDto> purchasedItems) { this.purchasedItems = purchasedItems; }
 
     public Double getTotalSpent() { return totalSpent; }
     public void setTotalSpent(Double totalSpent) { this.totalSpent = totalSpent; }
