@@ -1,7 +1,6 @@
 package com.store.tracker.dto;
 
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
 import java.util.List;
@@ -12,7 +11,7 @@ import java.util.List;
  */
 public class VisitLeaveRequest {
     
-    @NotEmpty(message = "Debe registrar al menos un artículo comprado")
+    @NotNull(message = "La lista de artículos es requerida (puede estar vacía)")
     @Valid
     private List<PurchasedItemDto> purchasedItems;
 
