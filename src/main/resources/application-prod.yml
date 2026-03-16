@@ -1,0 +1,39 @@
+spring:
+  # Configuración preparada para producción mediante variables de entorno
+  # Se asume una base de datos externa (ej: PostgreSQL)
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/store_tracker}
+    username: ${DB_USERNAME:admin}
+    password: ${DB_PASSWORD:secret}
+    driver-class-name: org.postgresql.Driver
+  
+  # Deshabilitar consola H2 en producción por seguridad
+  h2:
+    console:
+      enabled: false
+  
+  jpa:
+    hibernate:
+      ddl-auto: validate # No permitir que Hibernate altere el esquema en producción
+    show-sql: false
+    properties:
+      hibernate:
+        jdbc:
+          batch_size: 25
+        order_inserts: true
+        order_updates: true
+
+# Puerto configurable (útil para contenedores/PaaS)
+server:
+  port: ${PORT:8080}
+  error:
+    include-message: never # Seguridad: no filtrar mensajes internos en errores
+    include-stacktrace: never
+
+# Logging optimizado para producción
+logging:
+  level:
+    root: INFO
+    com.store.tracker: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
