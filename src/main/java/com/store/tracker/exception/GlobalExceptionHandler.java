@@ -37,7 +37,7 @@ public class GlobalExceptionHandler {
         String message = "Error de validación: " + errors.keySet().stream().collect(Collectors.joining(", "));
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.success(errors, message)); // Usamos success para el wrap pero con status 400
+                .body(new ApiResponse<>(false, message, errors));
     }
 
     /**
