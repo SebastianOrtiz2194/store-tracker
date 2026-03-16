@@ -21,6 +21,16 @@ spring:
       hibernate:
         format_sql: true
 
+# Configuración extendida para desarrollo
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "health,info,metrics,loggers"
+  endpoint:
+    health:
+      show-details: always
+
 # Puerto de desarrollo
 server:
   port: 8080
