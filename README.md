@@ -64,4 +64,4 @@ En la raíz de este proyecto encontrarás el archivo `Store_Tracker_Postman_Coll
 Puedes importarlo directamente en [Postman](https://www.postman.com/) para probar rápidamente los endpoints REST integrados.
 
 ---
-*Desarrollado para la gestión eficiente de visitas.*
+*Desarrollado para la gestión eficiente de visitas en un shop.*
