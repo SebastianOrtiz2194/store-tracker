@@ -1,0 +1,30 @@
+# Walkthrough: Refactorización Empresarial de Store Tracker
+
+Hemos transformado un servicio básico en una solución robusta y lista para producción siguiendo los estándares de la industria. A continuación, el resumen de lo logrado:
+
+## 🏁 Logros por Fase
+
+1.  **Arquitectura Limpia**: Separación de responsabilidades con capas ([Controller](file:///c:/workspace-antigravity/store-tracker/src/main/java/com/store/tracker/controller/VisitController.java#23-66), [Service](file:///c:/workspace-antigravity/store-tracker/src/main/java/com/store/tracker/service/VisitService.java#12-18), [Repository](file:///c:/workspace-antigravity/store-tracker/src/main/java/com/store/tracker/repository/VisitRepository.java#9-13)) y uso de `DTOs` con mappers profesionales.
+2.  **Validación y Excepciones**: Implementación de `@Valid` y un [GlobalExceptionHandler](file:///c:/workspace-antigravity/store-tracker/src/main/java/com/store/tracker/exception/GlobalExceptionHandler.java#19-63) para respuestas de error estandarizadas.
+3.  **Modelo de Datos Pro**: Normalización de entidades, relaciones `@OneToMany` ([PurchasedItem](file:///c:/workspace-antigravity/store-tracker/src/main/java/com/store/tracker/entity/PurchasedItem.java#13-71)), índices de base de datos y auditoría automática (`createdAt`, `updatedAt`).
+4.  **Configuración Avanzada**: Migración a `YAML`, manejo de perfiles (`dev` y `prod`) y externalización de secretos mediante variables de entorno.
+5.  **Observabilidad**: Integración de **Spring Boot Actuator** para monitoreo, **Swagger UI** para documentación interactiva y logging estructurado con **SLF4J**.
+6.  **Calidad Certificada (Testing)**: Cobertura total con pruebas unitarias de lógica de negocio, integración web de controladores y pruebas de persistencia con bases de datos en memoria.
+7.  **Seguridad**: Protección de endpoints con **Spring Security**, autenticación básica y arquitectura de sesión `STATeless`.
+8.  **Documentación Final**: [README.md](file:///c:/workspace-antigravity/store-tracker/README.md) actualizado con instrucciones claras de ejecución y requisitos tecnológicos.
+
+## 🚀 Cómo Probar el Resultado
+
+1.  **Ejecutar**: `mvn spring-boot:run -Dspring-boot.run.profiles=dev`
+2.  **Documentación**: Abre [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html) (No requiere login).
+3.  **H2 Console**: Visualiza la base de datos en [http://localhost:8080/h2-console](http://localhost:8080/h2-console).
+4.  **Probar API (Postman)**: Importa la colección y usa las credenciales en **Basic Auth**:
+    *   **User**: `admin`
+    *   **Pass**: `admin123`
+
+## ✅ Calidad Certificada
+- Todas las pruebas (**Unitarias**, **MockMvc**, **DataJpaTest**) pasan correctamente con `mvn test`.
+- Cobertura de lógica de negocio y seguridad validada.
+
+---
+¡El microservicio ahora es una pieza de software lista para el mundo empresarial! 🚀
