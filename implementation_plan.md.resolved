@@ -1,0 +1,38 @@
+# Plan de Implementación Consolidado
+
+## Versión 1: Seguridad y Pruebas (Completado)
+
+Este plan cubrió la implementación de seguridad básica y la suite de pruebas automatizadas.
+
+### Proposed Changes
+
+#### [NEW] [SecurityConfig.java](file:///c:/workspace-antigravity/store-tracker/src/main/java/com/store/tracker/config/SecurityConfig.java)
+- Configuración de Spring Security con Basic Auth.
+- Gestión de sesiones Stateless.
+- Definición de endpoints públicos y protegidos.
+
+#### [NEW] [VisitControllerTest.java](file:///c:/workspace-antigravity/store-tracker/src/test/java/com/store/tracker/controller/VisitControllerTest.java)
+- Pruebas de integración para controladores con `@WebMvcTest`.
+- Validación de seguridad con `@WithMockUser`.
+
+---
+
+## Versión 2: Documentación e Instrucciones de Ejecución (En curso)
+
+Este plan detalla la actualización final para asegurar que el microservicio pueda ser levantado y probado por cualquier desarrollador.
+
+### Proposed Changes
+
+#### [MODIFY] [README.md](file:///c:/workspace-antigravity/store-tracker/README.md)
+- **Requisitos**: Java 17, Maven.
+- **Ejecución**: Comandos para perfiles `dev` y `prod`.
+- **H2 Console**: Detalles de acceso para depuración.
+- **Postman**: Referencia a la colección de pruebas.
+- **Seguridad**: Credenciales de ejemplo (`admin`/`admin123`).
+
+## Verification Plan
+
+### Manual Verification
+- Levantar el servicio con `mvn spring-boot:run -Dspring-boot.run.profiles=dev`.
+- Acceder a `/swagger-ui.html`.
+- Probar un endpoint protegido con Basic Auth.
