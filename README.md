@@ -86,7 +86,7 @@ Al utilizar el perfil `dev`, puedes acceder a la consola de administración de l
 En la raíz del proyecto encontrarás el archivo `Store_Tracker_Postman_Collection.json`.
 1. Impórtalo en [Postman](https://www.postman.com/).
 2. Configura la **Basic Auth** en la colección con las credenciales `admin`/`admin123`.
-3. Ejecuta los requests predefinidos.
+3. Ejecuta todos los requests predefinidos.
 
 ---
 *Desarrollado bajo estándares de ingeniería de software de alta calidad.*
