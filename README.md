@@ -90,3 +90,4 @@ En la raíz del proyecto encontrarás el archivo `Store_Tracker_Postman_Collecti
 
 ---
 *Desarrollado bajo estándares de ingeniería de software de alta calidad.*
+*Desarrollado para la gestión eficiente de visitas en un shop.*
