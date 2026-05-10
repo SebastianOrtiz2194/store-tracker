@@ -1,93 +1,89 @@
-# Store Tracker 🏪
+# Store Tracker
 
-![Java](https://img.shields.io/badge/Java-17-ED8B00?style=for-the-badge&logo=java&logoColor=white)
-![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.2.3-6DB33F?style=for-the-badge&logo=spring-boot&logoColor=white)
-![Maven](https://img.shields.io/badge/Maven-C71A36?style=for-the-badge&logo=apache-maven&logoColor=white)
-![Security](https://img.shields.io/badge/Security-Basic_Auth-red?style=for-the-badge)
+Store Tracker is a microservice designed to manage store visits and purchases. It is built using Spring Boot and provides a RESTful API for seamless integration.
 
-Store Tracker es un microservicio alineado con estándares empresariales diseñado para gestionar visitas y compras. Refactorizado para ser robusto, escalable y seguro.
+## Technologies
 
----
+* Java 17
+* Spring Boot 3.2.3
+* Maven
+* Security: Basic Authentication (Stateless)
+* Database: H2 (Development) / External RDBMS (Production)
+* Documentation: OpenAPI 3 / Swagger UI
+* Testing: JUnit 5, Mockito, MockMvc, DataJpaTest
 
-## 🚀 Tecnologías y Buenas Prácticas
-Este proyecto implementa:
-*   **Arquitectura en Capas**: Controller -> Service -> Repository.
-*   **Validación de Datos**: Beans Validation (JSR-303).
-*   **Manejo Global de Errores**: Centralizado con `@ControllerAdvice`.
-*   **Observabilidad**: Spring Boot Actuator y SLF4J.
-*   **Documentación**: Swagger UI (OpenAPI 3).
-*   **Seguridad**: Basic Auth (Stateless).
-*   **Testing**: JUnit 5, Mockito, MockMvc y DataJpaTest (Cobertura completa).
+## Architecture
 
-## 📋 Requisitos Previos
-*   **Java JDK 17** o superior.
-*   **Maven 3.8+**.
-*   **Git**.
+This project follows a standard layered architecture:
+* Controllers for handling HTTP requests.
+* Services for encapsulating business logic.
+* Repositories for data access.
 
-## 🛠️ Instalación y Ejecución
+It also features centralized global exception handling using `@ControllerAdvice` and request payload validation via JSR-303 Bean Validation.
 
-1. **Clona el repositorio:**
+## Prerequisites
+
+* Java JDK 17 or higher
+* Maven 3.8+
+* Git
+
+## Getting Started
+
+1. Clone the repository:
    ```bash
    git clone https://github.com/SebastianOrtiz2194/store-tracker.git
    cd store-tracker
    ```
 
-2. **Compila y corre las pruebas:**
+2. Compile and run tests:
    ```bash
    mvn clean test
    ```
 
-3. **Ejecuta la aplicación:**
-   #### Perfil de Desarrollo (H2)
-   Ideal para pruebas rápidas.
+3. Run the application:
+
+   Development profile (uses in-memory H2 database):
    ```bash
    mvn spring-boot:run "-Dspring-boot.run.profiles=dev"
    ```
 
-   #### Perfil de Producción
-   Requiere configuración de variables de entorno (DB externa).
+   Production profile (requires external database configuration):
    ```bash
    mvn spring-boot:run "-Dspring-boot.run.profiles=prod"
    ```
 
-## 🔐 Seguridad e Ingreso
+## Security
 
-El servicio está protegido. Usa estas credenciales para probar los endpoints:
-*   **Usuario:** `admin`
-*   **Contraseña:** `admin123`
+The service endpoints are protected by Basic Authentication. Default credentials for local testing:
+* Username: admin
+* Password: admin123
 
-## 📖 Documentación de la API (Swagger)
+## API Documentation
 
-Una vez iniciada la aplicación, accede a la documentación interactiva:
-👉 [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
+Once the application is running, you can access the interactive Swagger UI documentation at:
+http://localhost:8080/swagger-ui.html
 
-## 📊 Monitoreo (Actuator)
+## Monitoring
 
-Monitorea la salud del servicio en:
-*   Health Check: `http://localhost:8080/actuator/health`
+Basic health checks are available via Spring Boot Actuator:
+http://localhost:8080/actuator/health
 
-## 🌍 Variables de Entorno (Producción)
-Si usas el perfil `prod`, configura:
-*   `DB_URL`: URL de tu base de datos (PostgreSQL/MySQL).
-*   `DB_USERNAME`: Usuario BD.
-*   `DB_PASSWORD`: Password BD.
-*   `SERVER_PORT`: Puerto (default 8080).
+## Environment Variables (Production)
 
-## 🗄️ Base de Datos en Memoria (H2 Console)
+If running with the `prod` profile, ensure the following environment variables are set:
+* `DB_URL`: Database connection string (e.g., PostgreSQL or MySQL)
+* `DB_USERNAME`: Database user
+* `DB_PASSWORD`: Database password
+* `SERVER_PORT`: Server port (default is 8080)
 
-Al utilizar el perfil `dev`, puedes acceder a la consola de administración de la base de datos:
-*   **URL:** `http://localhost:8080/h2-console`
-*   **JDBC URL:** `jdbc:h2:mem:testdb`
-*   **Username:** `sa`
-*   **Password:** *(vacío)*
+## H2 Database Console
 
-## 🧪 Pruebas con Postman
+When running the `dev` profile, the H2 console is available for database inspection:
+* URL: http://localhost:8080/h2-console
+* JDBC URL: jdbc:h2:mem:testdb
+* Username: sa
+* Password: (leave blank)
 
-En la raíz del proyecto encontrarás el archivo `Store_Tracker_Postman_Collection.json`.
-1. Impórtalo en [Postman](https://www.postman.com/).
-2. Configura la **Basic Auth** en la colección con las credenciales `admin`/`admin123`.
-3. Ejecuta todos los requests predefinidos.
+## Testing with Postman
 
----
-*Desarrollado bajo estándares de ingeniería de software de alta calidad.*
-*Desarrollado para la gestión eficiente de visitas en un shop.*
+A Postman collection (`Store_Tracker_Postman_Collection.json`) is included in the root directory. You can import this into Postman to test the endpoints. Remember to configure Basic Auth with the credentials `admin` and `admin123` before executing the requests.
