@@ -1,6 +1,5 @@
 spring:
   # Configuración preparada para producción mediante variables de entorno
-  # Se asume una base de datos externa (ej: PostgreSQL)
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/store_tracker}
     username: ${DB_USERNAME:admin}
@@ -23,7 +22,7 @@ spring:
         order_inserts: true
         order_updates: true
 
-# Puerto configurable (útil para contenedores/PaaS)
+# Puerto configurable
 server:
   port: ${PORT:8080}
   error:
