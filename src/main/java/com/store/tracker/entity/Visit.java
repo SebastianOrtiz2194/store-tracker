@@ -1,6 +1,7 @@
 package com.store.tracker.entity;
 
 import jakarta.persistence.*;
+import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -10,9 +11,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Entidad que representa la visita de una persona al establecimiento.
- * Incluye auditoría automática y relación con los artículos comprados.
+ * Represents a customer visit to the store, tracking entry/exit times,
+ * purchased items, and total amount spent.
+ *
+ * <p>Uses {@link AuditingEntityListener} to automatically populate
+ * {@code createdAt} and {@code updatedAt} timestamps.
  */
+@Getter
+@Setter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@ToString(exclude = "purchasedItems")
 @Entity
 @Table(name = "visits", indexes = {
     @Index(name = "idx_person_name", columnList = "personName"),
@@ -23,6 +32,7 @@ public class Visit {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @EqualsAndHashCode.Include
     private Long id;
 
     @Column(nullable = false)
@@ -32,58 +42,49 @@ public class Visit {
     private LocalDateTime entryTime;
 
     private LocalDateTime exitTime;
-    
+
     @OneToMany(mappedBy = "visit", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Setter(AccessLevel.NONE)
     private List<PurchasedItem> purchasedItems = new ArrayList<>();
 
     private Double totalSpent;
 
     @CreatedDate
     @Column(nullable = false, updatable = false)
+    @Setter(AccessLevel.NONE)
     private LocalDateTime createdAt;
 
     @LastModifiedDate
     @Column(nullable = false)
+    @Setter(AccessLevel.NONE)
     private LocalDateTime updatedAt;
 
-    public Visit() {
-    }
-
+    /**
+     * @param personName the visitor's name
+     * @param entryTime  the time the visitor entered the store
+     */
     public Visit(String personName, LocalDateTime entryTime) {
         this.personName = personName;
         this.entryTime = entryTime;
     }
 
-    // Helper methods for the relationship
+    /**
+     * Adds a purchased item to this visit, maintaining the bidirectional relationship.
+     *
+     * @param item the item to add; must not be {@code null}
+     */
     public void addPurchasedItem(PurchasedItem item) {
         purchasedItems.add(item);
         item.setVisit(this);
     }
 
+    /**
+     * Removes a purchased item from this visit, clearing the bidirectional relationship.
+     *
+     * @param item the item to remove; must not be {@code null}
+     */
     public void removePurchasedItem(PurchasedItem item) {
         purchasedItems.remove(item);
         item.setVisit(null);
     }
-
-    // Getters y Setters
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-
-    public String getPersonName() { return personName; }
-    public void setPersonName(String personName) { this.personName = personName; }
-
-    public LocalDateTime getEntryTime() { return entryTime; }
-    public void setEntryTime(LocalDateTime entryTime) { this.entryTime = entryTime; }
-
-    public LocalDateTime getExitTime() { return exitTime; }
-    public void setExitTime(LocalDateTime exitTime) { this.exitTime = exitTime; }
-
-    public List<PurchasedItem> getPurchasedItems() { return purchasedItems; }
-    public void setPurchasedItems(List<PurchasedItem> purchasedItems) { this.purchasedItems = purchasedItems; }
-
-    public Double getTotalSpent() { return totalSpent; }
-    public void setTotalSpent(Double totalSpent) { this.totalSpent = totalSpent; }
-
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public LocalDateTime getUpdatedAt() { return updatedAt; }
 }

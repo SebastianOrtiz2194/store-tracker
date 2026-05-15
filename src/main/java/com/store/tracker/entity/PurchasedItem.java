@@ -1,6 +1,7 @@
 package com.store.tracker.entity;
 
 import jakarta.persistence.*;
+import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -8,8 +9,17 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.time.LocalDateTime;
 
 /**
- * Entidad que representa un artículo comprado durante una visita.
+ * Represents an item purchased during a visit, including the product name,
+ * unit price, and quantity.
+ *
+ * <p>Uses {@link AuditingEntityListener} to automatically populate
+ * {@code createdAt} and {@code updatedAt} timestamps.
  */
+@Getter
+@Setter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@ToString(exclude = "visit")
 @Entity
 @Table(name = "purchased_items")
 @EntityListeners(AuditingEntityListener.class)
@@ -17,6 +27,7 @@ public class PurchasedItem {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @EqualsAndHashCode.Include
     private Long id;
 
     @Column(nullable = false)
@@ -34,37 +45,24 @@ public class PurchasedItem {
 
     @CreatedDate
     @Column(nullable = false, updatable = false)
+    @Setter(AccessLevel.NONE)
     private LocalDateTime createdAt;
 
     @LastModifiedDate
     @Column(nullable = false)
+    @Setter(AccessLevel.NONE)
     private LocalDateTime updatedAt;
 
-    public PurchasedItem() {}
-
+    /**
+     * @param name     the product name
+     * @param price    the unit price
+     * @param quantity the quantity purchased
+     * @param visit    the parent visit; must not be {@code null}
+     */
     public PurchasedItem(String name, Double price, Integer quantity, Visit visit) {
         this.name = name;
         this.price = price;
         this.quantity = quantity;
         this.visit = visit;
     }
-
-    // Getters y Setters
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
-
-    public Double getPrice() { return price; }
-    public void setPrice(Double price) { this.price = price; }
-
-    public Integer getQuantity() { return quantity; }
-    public void setQuantity(Integer quantity) { this.quantity = quantity; }
-
-    public Visit getVisit() { return visit; }
-    public void setVisit(Visit visit) { this.visit = visit; }
-
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public LocalDateTime getUpdatedAt() { return updatedAt; }
 }
