@@ -1,11 +1,32 @@
+# Build output
 target/
 *.class
+*.jar
+*.war
+bin/
+
+# IDE
+.idea/
+*.iml
+*.iws
 .settings/
 .project
 .classpath
 .factorypath
-.idea/
-*.iml
-*.iws
 .vscode/
-bin/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Environment and local config
+.env
+*.env.local
+application-local.yml
+application-local.properties
+
+# Maven wrapper
+.mvn/wrapper/maven-wrapper.jar

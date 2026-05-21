@@ -2,18 +2,18 @@
 	"info": {
 		"_postman_id": "7a3b1c2d-4e5f-6a7b-8c9d-0e1f2a3b4c5d",
 		"name": "Store Tracker API",
-		"description": "Colección para probar el microservicio de registro de visitas y compras.",
+		"description": "Collection for testing the Store Tracker microservice. Use Basic Auth with admin/admin123.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
 		{
-			"name": "1. Registrar Entrada",
+			"name": "1. Register Entry",
 			"request": {
 				"method": "POST",
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n    \"personName\": \"Juan Pérez\"\r\n}",
+					"raw": "{\n    \"personName\": \"John Doe\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -37,7 +37,7 @@
 			"response": []
 		},
 		{
-			"name": "2. Listar Personas Actualmente Adentro",
+			"name": "2. List Active Visits",
 			"request": {
 				"method": "GET",
 				"header": [],
@@ -58,13 +58,13 @@
 			"response": []
 		},
 		{
-			"name": "3. Registrar Salida y Compra",
+			"name": "3. Register Exit and Purchases",
 			"request": {
 				"method": "PUT",
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n    \"purchasedItems\": \"Camisa Azul, Pantalón Jean\",\r\n    \"totalSpent\": 75.90\r\n}",
+					"raw": "{\n    \"purchasedItems\": [\n        {\n            \"name\": \"Blue Shirt\",\n            \"price\": 45.00,\n            \"quantity\": 1\n        },\n        {\n            \"name\": \"Jeans\",\n            \"price\": 30.90,\n            \"quantity\": 1\n        }\n    ],\n    \"totalSpent\": 75.90\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -84,13 +84,13 @@
 						"1",
 						"leave"
 					],
-					"description": "Nota: El '1' es el ID de la visita. Asegúrate de usar el ID que recibiste al registrar la entrada."
+					"description": "Replace '1' with the visit ID returned when registering entry."
 				}
 			},
 			"response": []
 		},
 		{
-			"name": "4. Ver Historial Completo",
+			"name": "4. Get Full Visit History",
 			"request": {
 				"method": "GET",
 				"header": [],
