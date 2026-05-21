@@ -61,11 +61,7 @@ public class VisitMapper {
      */
     public static PurchasedItem toItemEntity(PurchasedItemDto dto, Visit visit) {
         if (dto == null) return null;
-        PurchasedItem entity = new PurchasedItem();
-        entity.setName(dto.getName());
-        entity.setPrice(dto.getPrice());
-        entity.setQuantity(dto.getQuantity());
-        entity.setVisit(visit);
+        PurchasedItem entity = new PurchasedItem(dto.getName(), dto.getPrice(), dto.getQuantity(), visit);
         return entity;
     }
 }
