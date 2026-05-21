@@ -3,8 +3,8 @@ package com.store.tracker.dto;
 import java.time.LocalDateTime;
 
 /**
- * Envoltorio estándar para todas las respuestas de la API.
- * Proporciona una estructura consistente para el frontend y otros consumidores.
+ * Standard wrapper for all API responses.
+ * Provides a consistent structure for frontend and other consumers.
  */
 public class ApiResponse<T> {
     private boolean success;
@@ -19,12 +19,12 @@ public class ApiResponse<T> {
         this.timestamp = LocalDateTime.now();
     }
 
-    // Facade para respuestas exitosas
+    // Factory method for success responses
     public static <T> ApiResponse<T> success(T data, String message) {
         return new ApiResponse<>(true, message, data);
     }
 
-    // Facade para errores
+    // Factory method for error responses
     public static <T> ApiResponse<T> error(String message) {
         return new ApiResponse<>(false, message, null);
     }

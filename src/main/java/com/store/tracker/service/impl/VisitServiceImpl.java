@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Implementación de la capa de servicio para Visit.
+ * Service layer implementation for visit management.
  */
 @Service
 public class VisitServiceImpl implements VisitService {
@@ -33,27 +33,27 @@ public class VisitServiceImpl implements VisitService {
     @Override
     @Transactional
     public VisitResponse registerEntry(VisitEntryRequest request) {
-        log.info("Registrando entrada para: {}", request.getPersonName());
+        log.info("Registering entry for: {}", request.getPersonName());
         Visit visit = new Visit(request.getPersonName(), LocalDateTime.now());
         Visit savedVisit = visitRepository.save(visit);
-        log.debug("Entrada guardada con ID: {}", savedVisit.getId());
+        log.debug("Entry saved with ID: {}", savedVisit.getId());
         return VisitMapper.toResponse(savedVisit);
     }
 
     @Override
     @Transactional
     public VisitResponse registerExit(Long id, VisitLeaveRequest request) {
-        log.info("Registrando salida para visita ID: {}", id);
+        log.info("Registering exit for visit ID: {}", id);
         return visitRepository.findById(id).map(visit -> {
             visit.setExitTime(LocalDateTime.now());
             
-            // Limpiar items existentes si hubiera (aunque en este flujo solo se registran al salir)
+            // Clear existing items before attaching new ones
             int itemsCount = request.getPurchasedItems() != null ? request.getPurchasedItems().size() : 0;
-            log.debug("Asociando {} articulos a la visita ID: {}", itemsCount, id);
+            log.debug("Associating {} items with visit ID: {}", itemsCount, id);
 
             visit.getPurchasedItems().clear();
             
-            // Mapear y añadir los nuevos items
+            // Map and attach new items
             if (request.getPurchasedItems() != null) {
                 request.getPurchasedItems().forEach(itemDto -> {
                     PurchasedItem item = VisitMapper.toItemEntity(itemDto, visit);
@@ -63,11 +63,11 @@ public class VisitServiceImpl implements VisitService {
             
             visit.setTotalSpent(request.getTotalSpent());
             Visit updatedVisit = visitRepository.save(visit);
-            log.info("Salida procesada exitosamente para visita ID: {}. Total: {}", id, updatedVisit.getTotalSpent());
+            log.info("Exit processed for visit ID: {}. Total: {}", id, updatedVisit.getTotalSpent());
             return VisitMapper.toResponse(updatedVisit);
         }).orElseThrow(() -> {
-            log.warn("Intento de registro de salida fallido: Visita ID {} no encontrada", id);
-            return new VisitNotFoundException("No se encontró la visita con ID: " + id);
+            log.warn("Failed to register exit: Visit ID {} not found", id);
+            return new VisitNotFoundException("Visit not found with ID: " + id);
         });
     }
 
@@ -82,7 +82,7 @@ public class VisitServiceImpl implements VisitService {
     @Override
     @Transactional(readOnly = true)
     public List<VisitResponse> getActiveVisits() {
-        log.debug("Consultando visitas activas (personas dentro del establecimiento)");
+        log.debug("Fetching active visits (visitors still inside the store)");
         return visitRepository.findByExitTimeIsNull().stream()
                 .map(VisitMapper::toResponse)
                 .collect(Collectors.toList());

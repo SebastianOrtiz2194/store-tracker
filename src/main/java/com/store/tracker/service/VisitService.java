@@ -7,7 +7,7 @@ import com.store.tracker.dto.VisitResponse;
 import java.util.List;
 
 /**
- * Interfaz que define las operaciones de negocio para la gestión de visitas.
+ * Defines business operations for visit management.
  */
 public interface VisitService {
     VisitResponse registerEntry(VisitEntryRequest request);

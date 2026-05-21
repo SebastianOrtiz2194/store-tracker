@@ -10,12 +10,12 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Mapper para convertir entre entidades y DTOs.
+ * Converts between Visit entities and response DTOs.
  */
 public class VisitMapper {
 
     /**
-     * Convierte una entidad Visit a un DTO VisitResponse.
+     * Maps a Visit entity to a VisitResponse DTO.
      */
     public static VisitResponse toResponse(Visit entity) {
         if (entity == null) return null;
@@ -34,7 +34,7 @@ public class VisitMapper {
     }
 
     /**
-     * Convierte una lista de PurchasedItem a PurchasedItemDto.
+     * Maps a list of PurchasedItem entities to DTOs.
      */
     public static List<PurchasedItemDto> toItemDtoList(List<PurchasedItem> items) {
         if (items == null) return Collections.emptyList();
@@ -44,7 +44,7 @@ public class VisitMapper {
     }
 
     /**
-     * Convierte un PurchasedItem a PurchasedItemDto.
+     * Maps a PurchasedItem entity to a DTO.
      */
     public static PurchasedItemDto toItemDto(PurchasedItem entity) {
         if (entity == null) return null;
@@ -57,7 +57,7 @@ public class VisitMapper {
     }
 
     /**
-     * Convierte un PurchasedItemDto a PurchasedItem.
+     * Maps a PurchasedItemDto to a PurchasedItem entity.
      */
     public static PurchasedItem toItemEntity(PurchasedItemDto dto, Visit visit) {
         if (dto == null) return null;

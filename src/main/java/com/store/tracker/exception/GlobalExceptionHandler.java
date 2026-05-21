@@ -13,15 +13,15 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * Controlador global de excepciones para asegurar que todos los errores 
- * sigan el formato estándar de ApiResponse.
+ * Global exception handler that ensures all error responses
+ * follow the standard ApiResponse format.
  */
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
     /**
-     * Maneja errores de validación de Beans (@Valid).
-     * Devuelve un mapa con los campos que fallaron y sus respectivos mensajes.
+     * Handles bean validation errors (@Valid).
+     * Returns a map of failed fields and their error messages.
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse<Map<String, String>>> handleValidationExceptions(
@@ -34,14 +34,14 @@ public class GlobalExceptionHandler {
             errors.put(fieldName, errorMessage);
         });
 
-        String message = "Error de validación: " + errors.keySet().stream().collect(Collectors.joining(", "));
+        String message = "Validation error: " + errors.keySet().stream().collect(Collectors.joining(", "));
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
                 .body(new ApiResponse<>(false, message, errors));
     }
 
     /**
-     * Maneja nuestra excepción personalizada VisitNotFoundException.
+     * Handles VisitNotFoundException when a requested visit does not exist.
      */
     @ExceptionHandler(VisitNotFoundException.class)
     public ResponseEntity<ApiResponse<Void>> handleVisitNotFoundException(VisitNotFoundException ex) {
@@ -51,12 +51,12 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * Manejador genérico para cualquier otra excepción no controlada.
+     * Catch-all handler for any unhandled exceptions.
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleGeneralException(Exception ex) {
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ApiResponse.error("Ha ocurrido un error inesperado: " + ex.getMessage()));
+                .body(ApiResponse.error("An unexpected error occurred: " + ex.getMessage()));
     }
 }

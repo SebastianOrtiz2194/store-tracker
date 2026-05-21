@@ -6,17 +6,16 @@ import jakarta.validation.constraints.PositiveOrZero;
 import java.util.List;
 
 /**
- * DTO para la solicitud de salida y registro de compras.
- * Ahora incluye una lista de artículos normalizada.
+ * Request body for recording a visitor's exit and purchased items.
  */
 public class VisitLeaveRequest {
     
-    @NotNull(message = "La lista de artículos es requerida (puede estar vacía)")
+    @NotNull(message = "Purchased items list is required (can be empty)")
     @Valid
     private List<PurchasedItemDto> purchasedItems;
 
-    @NotNull(message = "El monto total gastado es requerido")
-    @PositiveOrZero(message = "El monto total debe ser cero o positivo")
+    @NotNull(message = "Total spent amount is required")
+    @PositiveOrZero(message = "Total spent must be zero or positive")
     private Double totalSpent;
 
     public VisitLeaveRequest() {}

@@ -6,25 +6,24 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
 /**
- * DTO para representar un artículo comprado.
+ * Represents a purchased item in API request and response bodies.
  */
 public class PurchasedItemDto {
     private Long id;
 
-    @NotBlank(message = "El nombre del artículo es requerido")
+    @NotBlank(message = "Item name is required")
     private String name;
 
-    @NotNull(message = "El precio es requerido")
-    @Positive(message = "El precio debe ser mayor a cero")
+    @NotNull(message = "Price is required")
+    @Positive(message = "Price must be greater than zero")
     private Double price;
 
-    @NotNull(message = "La cantidad es requerida")
-    @Min(value = 1, message = "La cantidad mínima es 1")
+    @NotNull(message = "Quantity is required")
+    @Min(value = 1, message = "Minimum quantity is 1")
     private Integer quantity;
 
     public PurchasedItemDto() {}
 
-    // Getters y Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 

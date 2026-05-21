@@ -4,7 +4,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * DTO para representar una visita en las respuestas de la API.
+ * Response body representing a visit in API responses.
  */
 public class VisitResponse {
     private Long id;
@@ -18,7 +18,6 @@ public class VisitResponse {
 
     public VisitResponse() {}
 
-    // Getters y Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 

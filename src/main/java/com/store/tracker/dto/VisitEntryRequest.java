@@ -3,10 +3,10 @@ package com.store.tracker.dto;
 import jakarta.validation.constraints.NotBlank;
 
 /**
- * DTO para la solicitud de entrada de una persona al establecimiento.
+ * Request body for registering a visitor's entry to the store.
  */
 public class VisitEntryRequest {
-    @NotBlank(message = "El nombre de la persona no puede estar vacío")
+    @NotBlank(message = "Person name cannot be blank")
     private String personName;
 
     public VisitEntryRequest() {}

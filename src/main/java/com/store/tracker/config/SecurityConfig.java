@@ -16,8 +16,8 @@ import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 
 /**
- * Configuración de seguridad para la aplicación.
- * Implementa seguridad básica stateless (sin estado) para los endpoints de la API.
+ * Security configuration for the application.
+ * Sets up stateless basic authentication for API endpoints.
  */
 @Configuration
 @EnableWebSecurity
@@ -26,23 +26,23 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(AbstractHttpConfigurer::disable) // Desactivar CSRF para APIs stateless
+            .csrf(AbstractHttpConfigurer::disable)
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                // Endpoints públicos (Documentación y Salud)
+                // Public endpoints (documentation and health checks)
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html", "/api-docs/**").permitAll()
                 .requestMatchers("/actuator/health/**").permitAll()
-                // El resto requiere autenticación
+                // All other requests require authentication
                 .anyRequest().authenticated()
             )
-            .httpBasic(Customizer.withDefaults()); // Usar autenticación básica para esta fase
+            .httpBasic(Customizer.withDefaults());
 
         return http.build();
     }
 
     @Bean
     public UserDetailsService userDetailsService(PasswordEncoder passwordEncoder) {
-        // En un entorno empresarial real, esto vendría de una base de datos o LDAP
+        // In production, credentials would come from a database or LDAP
         UserDetails admin = User.builder()
             .username("admin")
             .password(passwordEncoder.encode("admin123"))
