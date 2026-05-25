@@ -40,8 +40,7 @@ public class VisitServiceImplTest {
     @Test
     void registerEntry_ShouldReturnVisitResponse() {
         // Arrange
-        VisitEntryRequest request = new VisitEntryRequest();
-        request.setPersonName("Juan Perez");
+        VisitEntryRequest request = new VisitEntryRequest("Juan Perez");
         
         when(visitRepository.save(any(Visit.class))).thenReturn(mockVisit);
 

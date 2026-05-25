@@ -33,8 +33,8 @@ public class VisitServiceImpl implements VisitService {
     @Override
     @Transactional
     public VisitResponse registerEntry(VisitEntryRequest request) {
-        log.info("Registering entry for: {}", request.getPersonName());
-        Visit visit = new Visit(request.getPersonName(), LocalDateTime.now());
+        log.info("Registering entry for: {}", request.personName());
+        Visit visit = new Visit(request.personName(), LocalDateTime.now());
         Visit savedVisit = visitRepository.save(visit);
         log.debug("Entry saved with ID: {}", savedVisit.getId());
         return VisitMapper.toResponse(savedVisit);

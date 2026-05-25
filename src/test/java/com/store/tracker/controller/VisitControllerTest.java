@@ -36,8 +36,7 @@ public class VisitControllerTest {
     @WithMockUser(username = "admin", roles = {"ADMIN"})
     void registerEntry_WhenValidRequest_ShouldReturn200() throws Exception {
         // Arrange
-        VisitEntryRequest request = new VisitEntryRequest();
-        request.setPersonName("Maria Gomez");
+        VisitEntryRequest request = new VisitEntryRequest("Maria Gomez");
         
         VisitResponse response = new VisitResponse();
         response.setId(1L);
@@ -59,8 +58,7 @@ public class VisitControllerTest {
     @WithMockUser(username = "admin", roles = {"ADMIN"})
     void registerEntry_WhenInvalidRequest_ShouldReturn400() throws Exception {
         // Arrange
-        VisitEntryRequest request = new VisitEntryRequest();
-        request.setPersonName(""); // Name is blank, should trigger validation error
+        VisitEntryRequest request = new VisitEntryRequest(""); // Name is blank, should trigger validation error
 
         // Act & Assert
         mockMvc.perform(post("/api/visits/enter")
@@ -73,8 +71,7 @@ public class VisitControllerTest {
 
     @Test
     void registerEntry_WhenUnauthorized_ShouldReturn401() throws Exception {
-        VisitEntryRequest request = new VisitEntryRequest();
-        request.setPersonName("Unauthenticated User");
+        VisitEntryRequest request = new VisitEntryRequest("Unauthenticated User");
 
         mockMvc.perform(post("/api/visits/enter")
                 .contentType(MediaType.APPLICATION_JSON)
