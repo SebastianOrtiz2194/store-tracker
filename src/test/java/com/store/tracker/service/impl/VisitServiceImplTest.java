@@ -49,7 +49,7 @@ public class VisitServiceImplTest {
 
         // Assert
         assertNotNull(response);
-        assertEquals("Juan Perez", response.getPersonName());
+        assertEquals("Juan Perez", response.personName());
         verify(visitRepository, times(1)).save(any(Visit.class));
     }
 
@@ -66,8 +66,8 @@ public class VisitServiceImplTest {
 
         // Assert
         assertNotNull(response);
-        assertNotNull(response.getExitTime());
-        assertEquals(150.0, response.getTotalSpent());
+        assertNotNull(response.exitTime());
+        assertEquals(150.0, response.totalSpent());
         verify(visitRepository, times(1)).findById(1L);
         verify(visitRepository, times(1)).save(any(Visit.class));
     }

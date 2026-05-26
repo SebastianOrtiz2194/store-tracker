@@ -38,9 +38,7 @@ public class VisitControllerTest {
         // Arrange
         VisitEntryRequest request = new VisitEntryRequest("Maria Gomez");
         
-        VisitResponse response = new VisitResponse();
-        response.setId(1L);
-        response.setPersonName("Maria Gomez");
+        VisitResponse response = new VisitResponse(1L, "Maria Gomez");
 
         when(visitService.registerEntry(any(VisitEntryRequest.class))).thenReturn(response);
 

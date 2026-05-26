@@ -20,17 +20,16 @@ public class VisitMapper {
     public static VisitResponse toResponse(Visit entity) {
         if (entity == null) return null;
 
-        VisitResponse response = new VisitResponse();
-        response.setId(entity.getId());
-        response.setPersonName(entity.getPersonName());
-        response.setEntryTime(entity.getEntryTime());
-        response.setExitTime(entity.getExitTime());
-        response.setPurchasedItems(toItemDtoList(entity.getPurchasedItems()));
-        response.setTotalSpent(entity.getTotalSpent());
-        response.setCreatedAt(entity.getCreatedAt());
-        response.setUpdatedAt(entity.getUpdatedAt());
-
-        return response;
+        return new VisitResponse(
+            entity.getId(),
+            entity.getPersonName(),
+            entity.getEntryTime(),
+            entity.getExitTime(),
+            toItemDtoList(entity.getPurchasedItems()),
+            entity.getTotalSpent(),
+            entity.getCreatedAt(),
+            entity.getUpdatedAt()
+        );
     }
 
     /**
