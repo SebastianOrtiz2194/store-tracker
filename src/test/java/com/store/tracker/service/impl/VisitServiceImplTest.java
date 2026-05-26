@@ -56,8 +56,7 @@ public class VisitServiceImplTest {
     @Test
     void registerExit_WhenVisitExists_ShouldReturnUpdatedVisitResponse() {
         // Arrange
-        VisitLeaveRequest request = new VisitLeaveRequest();
-        request.setTotalSpent(150.0);
+        VisitLeaveRequest request = new VisitLeaveRequest(null, 150.0);
         
         when(visitRepository.findById(1L)).thenReturn(Optional.of(mockVisit));
         when(visitRepository.save(any(Visit.class))).thenReturn(mockVisit);
@@ -76,7 +75,7 @@ public class VisitServiceImplTest {
     @Test
     void registerExit_WhenVisitDoesNotExist_ShouldThrowException() {
         // Arrange
-        VisitLeaveRequest request = new VisitLeaveRequest();
+        VisitLeaveRequest request = new VisitLeaveRequest(null, null);
         
         when(visitRepository.findById(99L)).thenReturn(Optional.empty());
 

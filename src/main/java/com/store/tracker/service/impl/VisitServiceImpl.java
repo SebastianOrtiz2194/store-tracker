@@ -48,20 +48,20 @@ public class VisitServiceImpl implements VisitService {
             visit.setExitTime(LocalDateTime.now());
             
             // Clear existing items before attaching new ones
-            int itemsCount = request.getPurchasedItems() != null ? request.getPurchasedItems().size() : 0;
+            int itemsCount = request.purchasedItems() != null ? request.purchasedItems().size() : 0;
             log.debug("Associating {} items with visit ID: {}", itemsCount, id);
 
             visit.getPurchasedItems().clear();
             
             // Map and attach new items
-            if (request.getPurchasedItems() != null) {
-                request.getPurchasedItems().forEach(itemDto -> {
+            if (request.purchasedItems() != null) {
+                request.purchasedItems().forEach(itemDto -> {
                     PurchasedItem item = VisitMapper.toItemEntity(itemDto, visit);
                     visit.addPurchasedItem(item);
                 });
             }
             
-            visit.setTotalSpent(request.getTotalSpent());
+            visit.setTotalSpent(request.totalSpent());
             Visit updatedVisit = visitRepository.save(visit);
             log.info("Exit processed for visit ID: {}. Total: {}", id, updatedVisit.getTotalSpent());
             return VisitMapper.toResponse(updatedVisit);
