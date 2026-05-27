@@ -6,6 +6,7 @@ import com.store.tracker.dto.VisitResponse;
 import com.store.tracker.entity.PurchasedItem;
 import com.store.tracker.entity.Visit;
 import com.store.tracker.exception.VisitNotFoundException;
+import com.store.tracker.mapper.PurchasedItemMapper;
 import com.store.tracker.mapper.VisitMapper;
 import com.store.tracker.repository.VisitRepository;
 import com.store.tracker.service.VisitService;
@@ -58,7 +59,7 @@ public class VisitServiceImpl implements VisitService {
             // Map and attach new items
             if (request.purchasedItems() != null) {
                 request.purchasedItems().forEach(itemDto -> {
-                    PurchasedItem item = VisitMapper.toItemEntity(itemDto, visit);
+                    PurchasedItem item = PurchasedItemMapper.toEntity(itemDto, visit);
                     visit.addPurchasedItem(item);
                 });
             }
