@@ -1,5 +1,6 @@
 package com.store.tracker.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
@@ -23,6 +24,9 @@ import org.springframework.security.web.SecurityFilterChain;
 @EnableWebSecurity
 public class SecurityConfig {
 
+    @Value("${ADMIN_PASSWORD}")
+    private String adminPassword;
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
@@ -45,7 +49,7 @@ public class SecurityConfig {
         // In production, credentials would come from a database or LDAP
         UserDetails admin = User.builder()
             .username("admin")
-            .password(passwordEncoder.encode("admin123"))
+            .password(passwordEncoder.encode(adminPassword))
             .roles("ADMIN")
             .build();
 
