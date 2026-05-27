@@ -9,7 +9,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,8 +23,11 @@ import java.util.List;
 @Tag(name = "Visits", description = "Endpoints for managing customer entries, exits, and purchases")
 public class VisitController {
 
-    @Autowired
-    private VisitService visitService;
+    private final VisitService visitService;
+
+    public VisitController(VisitService visitService) {
+        this.visitService = visitService;
+    }
 
     @PostMapping("/enter")
     @Operation(summary = "Register entry", description = "Creates a new visit record when a person enters the store")

@@ -11,7 +11,6 @@ import com.store.tracker.repository.VisitRepository;
 import com.store.tracker.service.VisitService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,8 +26,11 @@ public class VisitServiceImpl implements VisitService {
 
     private static final Logger log = LoggerFactory.getLogger(VisitServiceImpl.class);
 
-    @Autowired
-    private VisitRepository visitRepository;
+    private final VisitRepository visitRepository;
+
+    public VisitServiceImpl(VisitRepository visitRepository) {
+        this.visitRepository = visitRepository;
+    }
 
     @Override
     @Transactional
