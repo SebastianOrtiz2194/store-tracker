@@ -48,7 +48,7 @@ public class VisitControllerTest {
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.personName").value("Maria Gomez"))
-                .andExpect(jsonPath("$.message").value("Entrada registrada con éxito"))
+                .andExpect(jsonPath("$.message").value("Entry registered successfully"))
                 .andExpect(jsonPath("$.success").value(true));
     }
 
