@@ -1,19 +1,17 @@
 spring:
-  # Configuración preparada para producción mediante variables de entorno
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/store_tracker}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
-  
-  # Deshabilitar consola H2 en producción por seguridad
+
   h2:
     console:
       enabled: false
-  
+
   jpa:
     hibernate:
-      ddl-auto: validate # No permitir que Hibernate altere el esquema en producción
+      ddl-auto: validate
     show-sql: false
     properties:
       hibernate:
@@ -22,14 +20,12 @@ spring:
         order_inserts: true
         order_updates: true
 
-# Puerto configurable
 server:
   port: ${PORT:8080}
   error:
-    include-message: never # Seguridad: no filtrar mensajes internos en errores
+    include-message: never
     include-stacktrace: never
 
-# Logging optimizado para producción
 logging:
   level:
     root: INFO
