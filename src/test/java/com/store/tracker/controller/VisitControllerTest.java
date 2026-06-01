@@ -2,7 +2,9 @@ package com.store.tracker.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.store.tracker.dto.VisitEntryRequest;
+import com.store.tracker.dto.VisitLeaveRequest;
 import com.store.tracker.dto.VisitResponse;
+import com.store.tracker.exception.VisitNotFoundException;
 import com.store.tracker.service.VisitService;
 import com.store.tracker.config.SecurityConfig;
 import org.junit.jupiter.api.Test;
@@ -14,10 +16,17 @@ import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.LocalDateTime;
+import java.util.List;
+
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(VisitController.class)
 @Import(SecurityConfig.class)
@@ -35,17 +44,15 @@ public class VisitControllerTest {
     @Test
     @WithMockUser(username = "admin", roles = {"ADMIN"})
     void registerEntry_WhenValidRequest_ShouldReturn200() throws Exception {
-        // Arrange
+        // given
         VisitEntryRequest request = new VisitEntryRequest("Maria Gomez");
-        
         VisitResponse response = new VisitResponse(1L, "Maria Gomez");
-
         when(visitService.registerEntry(any(VisitEntryRequest.class))).thenReturn(response);
 
-        // Act & Assert
+        // when / then
         mockMvc.perform(post("/api/visits/enter")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.personName").value("Maria Gomez"))
                 .andExpect(jsonPath("$.message").value("Entry registered successfully"))
@@ -55,13 +62,13 @@ public class VisitControllerTest {
     @Test
     @WithMockUser(username = "admin", roles = {"ADMIN"})
     void registerEntry_WhenInvalidRequest_ShouldReturn400() throws Exception {
-        // Arrange
-        VisitEntryRequest request = new VisitEntryRequest(""); // Name is blank, should trigger validation error
+        // given
+        VisitEntryRequest request = new VisitEntryRequest("");
 
-        // Act & Assert
+        // when / then
         mockMvc.perform(post("/api/visits/enter")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.success").value(false))
                 .andExpect(jsonPath("$.message").exists());
@@ -72,8 +79,86 @@ public class VisitControllerTest {
         VisitEntryRequest request = new VisitEntryRequest("Unauthenticated User");
 
         mockMvc.perform(post("/api/visits/enter")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @WithMockUser(username = "admin", roles = {"ADMIN"})
+    void registerExit_WhenValidRequest_ShouldReturn200() throws Exception {
+        // given
+        VisitLeaveRequest request = new VisitLeaveRequest(List.of(), 150.0);
+        VisitResponse response = new VisitResponse(
+                1L, "Juan Perez", LocalDateTime.now().minusHours(1),
+                LocalDateTime.now(), List.of(), 150.0, null, null);
+        when(visitService.registerExit(anyLong(), any(VisitLeaveRequest.class))).thenReturn(response);
+
+        // when / then
+        mockMvc.perform(put("/api/visits/1/leave")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.message").value("Exit registered successfully"))
+                .andExpect(jsonPath("$.data.id").value(1))
+                .andExpect(jsonPath("$.data.totalSpent").value(150.0));
+    }
+
+    @Test
+    @WithMockUser(username = "admin", roles = {"ADMIN"})
+    void registerExit_WhenVisitNotFound_ShouldReturn404() throws Exception {
+        // given
+        VisitLeaveRequest request = new VisitLeaveRequest(List.of(), 0.0);
+        when(visitService.registerExit(anyLong(), any(VisitLeaveRequest.class)))
+                .thenThrow(new VisitNotFoundException("Visit not found with ID: 99"));
+
+        // when / then
+        mockMvc.perform(put("/api/visits/99/leave")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.message").value("Visit not found with ID: 99"));
+    }
+
+    @Test
+    @WithMockUser(username = "admin", roles = {"ADMIN"})
+    void getAllVisits_ShouldReturn200WithList() throws Exception {
+        // given
+        VisitResponse first = new VisitResponse(1L, "Alice");
+        VisitResponse second = new VisitResponse(2L, "Bob");
+        when(visitService.getAllVisits()).thenReturn(List.of(first, second));
+
+        // when / then
+        mockMvc.perform(get("/api/visits"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.message").value("Visit list retrieved"))
+                .andExpect(jsonPath("$.data", org.hamcrest.Matchers.hasSize(2)))
+                .andExpect(jsonPath("$.data[0].personName").value("Alice"))
+                .andExpect(jsonPath("$.data[1].personName").value("Bob"));
+    }
+
+    @Test
+    @WithMockUser(username = "admin", roles = {"ADMIN"})
+    void getActiveVisits_ShouldReturn200WithList() throws Exception {
+        // given
+        VisitResponse active = new VisitResponse(1L, "Inside Customer");
+        when(visitService.getActiveVisits()).thenReturn(List.of(active));
+
+        // when / then
+        mockMvc.perform(get("/api/visits/active"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.message").value("Active visit list retrieved"))
+                .andExpect(jsonPath("$.data", org.hamcrest.Matchers.hasSize(1)))
+                .andExpect(jsonPath("$.data[0].personName").value("Inside Customer"));
+    }
+
+    @Test
+    void getAllVisits_WhenUnauthorized_ShouldReturn401() throws Exception {
+        mockMvc.perform(get("/api/visits"))
                 .andExpect(status().isUnauthorized());
     }
 }
