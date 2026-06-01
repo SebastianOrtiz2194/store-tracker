@@ -1,96 +1,246 @@
 # Store Tracker
 
-A Spring Boot microservice that tracks customer visits to a retail store, recording entry and exit times along with purchased items. Built as a clean, layered REST API with proper validation, exception handling, and test coverage.
+> Spring Modulith tracking customer visits and purchases in retail stores.
+
+A Spring Boot service that records customer entries and exits at a retail store, captures the items purchased during each visit, and exposes a small REST API for querying visit history and who's currently inside the store.
+
+The project is currently organized as a layered monolith and is being migrated to a [Spring Modulith](https://spring.io/projects/spring-modulith): a single deployable with a clear, ArchUnit-enforced module boundary around the `visits` domain. The package layout reflects the first step of that migration, and a second bounded context (e.g. inventory, customers, billing) can be extracted into its own service with minimal refactoring.
+
+## Table of Contents
+
+- [Tech Stack](#tech-stack)
+- [Architecture](#architecture)
+- [Project Structure](#project-structure)
+- [Prerequisites](#prerequisites)
+- [Quick Start](#quick-start)
+- [Configuration](#configuration)
+- [API](#api)
+- [Testing](#testing)
+- [Operational Notes](#operational-notes)
+- [Roadmap](#roadmap)
 
 ## Tech Stack
 
-- Java 17
-- Spring Boot 3.2.3
-- Spring Data JPA with H2 (dev) / external RDBMS (prod)
-- Spring Security (stateless Basic Auth)
-- Bean Validation (JSR-380)
-- OpenAPI 3 / Swagger UI
-- JUnit 5, Mockito, MockMvc, @DataJpaTest
-- Maven
+- **Java 21** (LTS)
+- **Spring Boot 3.2.3** — Web, Data JPA, Validation, Security, Actuator
+- **Spring Data JPA** with H2 (dev) / PostgreSQL (prod)
+- **Spring Security** — stateless HTTP Basic
+- **Bean Validation** (Jakarta / JSR-380)
+- **springdoc-openapi 2.3.0** — OpenAPI 3 / Swagger UI
+- **JUnit 5**, **Mockito**, **AssertJ**, **MockMvc**, `@DataJpaTest`
+- **Maven** for build and dependency management
 
 ## Architecture
 
-The project follows a standard three-layer structure:
+The service follows a three-layer design:
 
 ```
-Controller -> Service -> Repository
+HTTP Request
+     │
+     ▼
+┌──────────────┐
+│  Controller  │  VisitController  (@RestController, @Valid request bodies)
+└──────┬───────┘
+       │
+       ▼
+┌──────────────┐
+│   Service    │  VisitServiceImpl  (@Transactional boundaries, business rules)
+└──────┬───────┘
+       │
+       ▼
+┌──────────────┐
+│  Repository  │  VisitRepository  (Spring Data JPA)
+└──────┬───────┘
+       │
+       ▼
+   Database     H2 (dev) / PostgreSQL (prod)
 ```
 
-- **Controllers** handle HTTP requests and delegate to the service layer
-- **Services** contain business logic and transaction boundaries
-- **Repositories** manage data access through Spring Data JPA
-- **Global exception handler** (`@ControllerAdvice`) ensures consistent error responses
-- **Mapper** layer converts between entities and DTOs without external libraries
+Cross-cutting concerns:
 
-## Running Locally
+- **`SecurityConfig`** — stateless Basic Auth. Swagger UI and `/actuator/health/**` are public; all other routes require authentication.
+- **`GlobalExceptionHandler`** — `@ControllerAdvice` that maps validation and domain exceptions to the standard [`ApiResponse`](#api) envelope.
+- **`VisitMapper` / `PurchasedItemMapper`** — hand-rolled entity↔DTO conversion. No MapStruct dependency.
+- **`ApiResponse<T>`** — uniform JSON envelope with `success`, `message`, `data`, `timestamp`.
+- **`JpaConfig`** — enables JPA auditing so `@CreatedDate` and `@LastModifiedDate` are populated automatically.
+- **`ApplicationProperties`** — type-safe configuration bound to the `app.*` prefix.
 
-### Prerequisites
+## Project Structure
 
-- JDK 17+
-- Maven 3.8+
+```
+src/main/java/com/store/tracker/
+├── TrackerApplication.java        # entry point
+├── config/
+│   ├── ApplicationProperties.java # @ConfigurationProperties(prefix = "app")
+│   ├── JpaConfig.java             # @EnableJpaAuditing
+│   └── SecurityConfig.java        # basic auth, ADMIN_PASSWORD env
+├── controller/
+│   └── VisitController.java
+├── service/
+│   ├── VisitService.java          # interface
+│   └── impl/VisitServiceImpl.java
+├── repository/
+│   └── VisitRepository.java
+├── entity/
+│   ├── Visit.java
+│   └── PurchasedItem.java
+├── dto/
+│   ├── ApiResponse.java
+│   ├── PurchasedItemDto.java
+│   ├── VisitEntryRequest.java
+│   ├── VisitLeaveRequest.java
+│   └── VisitResponse.java
+├── mapper/
+│   ├── VisitMapper.java
+│   └── PurchasedItemMapper.java
+└── exception/
+    ├── GlobalExceptionHandler.java
+    └── VisitNotFoundException.java
 
-### Build and Test
+src/test/java/com/store/tracker/
+├── controller/VisitControllerTest.java   # @WebMvcTest, 8 cases
+├── service/impl/VisitServiceImplTest.java # Mockito + AssertJ, 7 cases
+└── repository/VisitRepositoryTest.java   # @DataJpaTest, 5 cases
+```
+
+## Prerequisites
+
+- JDK 21 or newer
+- Maven 3.8 or newer
+
+## Quick Start
+
+### Build and test
 
 ```bash
 mvn clean test
 ```
 
-### Run
+### Run in dev mode
 
-Development mode (in-memory H2 database):
-
-```bash
-mvn spring-boot:run "-Dspring-boot.run.profiles=dev"
-```
-
-Production mode (requires external database):
+In-memory H2 database, SQL logging enabled, H2 web console at `/h2-console`.
 
 ```bash
-mvn spring-boot:run "-Dspring-boot.run.profiles=prod"
+ADMIN_PASSWORD=devpass mvn spring-boot:run -Dspring-boot.run.profiles=dev
 ```
 
-## API Endpoints
+### Run in prod mode
+
+Connects to a PostgreSQL instance configured via environment variables. See [Configuration](#configuration) for the full list.
+
+```bash
+ADMIN_PASSWORD=your-strong-password \
+DB_URL=jdbc:postgresql://localhost:5432/store_tracker \
+DB_USERNAME=tracker \
+DB_PASSWORD=tracker-secret \
+mvn spring-boot:run -Dspring-boot.run.profiles=prod
+```
+
+## Configuration
+
+All credentials are environment-driven. There are no default secrets.
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `ADMIN_PASSWORD` | **yes** | — | Plain-text password for the `admin` user (BCrypt-hashed at startup) |
+| `SPRING_PROFILES_ACTIVE` | no | `dev` | Active Spring profile |
+| `DB_URL` | yes (prod) | `jdbc:postgresql://localhost:5432/store_tracker` | JDBC connection string |
+| `DB_USERNAME` | yes (prod) | — | Database user |
+| `DB_PASSWORD` | yes (prod) | — | Database password |
+| `H2_PASSWORD` | no | `password` | H2 password (dev only) |
+| `PORT` | no (prod) | `8080` | HTTP listen port |
+
+### Profiles
+
+- **`dev`** — H2 in-memory, SQL logging, H2 console enabled, debug-level app logs
+- **`prod`** — PostgreSQL, `ddl-auto: validate`, error messages hidden, info-level logs
+
+## API
+
+All endpoints live under `/api/visits` and require HTTP Basic auth. Responses follow the [`ApiResponse<T>`](#response-envelope) envelope.
 
 | Method | Path | Description |
 |--------|------|-------------|
-| POST | `/api/visits/enter` | Register a customer entry |
-| PUT | `/api/visits/{id}/leave` | Register exit with purchased items |
-| GET | `/api/visits` | Full visit history |
-| GET | `/api/visits/active` | Visitors currently inside the store |
+| `POST` | `/api/visits/enter` | Register a customer entry |
+| `PUT` | `/api/visits/{id}/leave` | Register exit with purchased items |
+| `GET` | `/api/visits` | Full visit history |
+| `GET` | `/api/visits/active` | Visitors currently inside the store |
 
-All endpoints require Basic Auth. Default credentials: `admin` / `admin123`
+### Response Envelope
 
-## Documentation
+```json
+{
+  "success": true,
+  "message": "Entry registered successfully",
+  "data": { },
+  "timestamp": "2026-06-01T10:00:00"
+}
+```
 
-Swagger UI is available at: http://localhost:8080/swagger-ui.html
+Errors use the same envelope with `success: false` and a `null` data payload.
 
-Health check: http://localhost:8080/actuator/health
+### Examples
 
-## H2 Console (dev only)
+**Register an entry**
 
-When running with the `dev` profile:
+```bash
+curl -u admin:devpass -X POST http://localhost:8080/api/visits/enter \
+  -H "Content-Type: application/json" \
+  -d '{"personName":"Maria Gomez"}'
+```
 
-- URL: http://localhost:8080/h2-console
-- JDBC URL: `jdbc:h2:mem:testdb`
-- Username: `sa`
-- Password: (leave blank)
+**Register an exit with purchases**
 
-## Postman Collection
+```bash
+curl -u admin:devpass -X PUT http://localhost:8080/api/visits/1/leave \
+  -H "Content-Type: application/json" \
+  -d '{
+    "purchasedItems": [
+      {"name":"Coffee","price":3.5,"quantity":1},
+      {"name":"Croissant","price":2.0,"quantity":2}
+    ],
+    "totalSpent": 7.5
+  }'
+```
 
-Import `Store_Tracker_Postman_Collection.json` into Postman to test all endpoints. Configure Basic Auth with the default credentials before sending requests.
+**List active visits**
 
-## Production Configuration
+```bash
+curl -u admin:devpass http://localhost:8080/api/visits/active
+```
 
-Set these environment variables when deploying with the `prod` profile:
+### Interactive Documentation
 
-| Variable | Description |
-|----------|-------------|
-| `DB_URL` | Database connection string |
-| `DB_USERNAME` | Database user |
-| `DB_PASSWORD` | Database password |
-| `SERVER_PORT` | Server port (defaults to 8080) |
+- Swagger UI: <http://localhost:8080/swagger-ui.html>
+- OpenAPI spec (JSON): <http://localhost:8080/api-docs>
+
+## Testing
+
+The project ships with a 20-test suite covering all three layers:
+
+| Test class | Slice | What it covers |
+|------------|-------|----------------|
+| `VisitControllerTest` | `@WebMvcTest` | Endpoint behavior, request validation, security (401/404 paths) |
+| `VisitServiceImplTest` | Mockito + AssertJ | Service logic, exception paths, list-returning methods |
+| `VisitRepositoryTest` | `@DataJpaTest` | `findAll`, `findByExitTimeIsNull`, `save`, empty-list edges |
+
+Run the full suite:
+
+```bash
+mvn test
+```
+
+## Operational Notes
+
+- **H2 Console (dev only)** — <http://localhost:8080/h2-console>. JDBC URL `jdbc:h2:mem:storedb`, user `sa`, password from `H2_PASSWORD`.
+- **Actuator health** — <http://localhost:8080/actuator/health>. Unauthenticated for orchestrator probes.
+- **Postman collection** — `Store_Tracker_Postman_Collection.json` is included for quick API exploration. Update the Basic Auth password in Postman to match the `ADMIN_PASSWORD` you set at startup.
+- **Architecture diagrams** — see [`docs/images/`](docs/images/) for the ER and high-level diagrams.
+
+## Roadmap
+
+The project is being incrementally evolved from a layered monolith to a **Spring Modulith** with a clear extraction path:
+
+1. Add `spring-modulith` dependencies and a `ModularityTests` boundary-enforcement test.
+2. Move the visit domain into its own package module (`com.store.tracker.visits`).
+3. Once a second bounded context emerges (inventory, customers, billing, …), extract that module into its own service.
