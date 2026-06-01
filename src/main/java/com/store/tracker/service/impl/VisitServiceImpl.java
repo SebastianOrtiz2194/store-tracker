@@ -20,7 +20,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Service layer implementation for visit management.
+ * Service layer implementation for visit management. Coordinates persistence
+ * and mapping between {@link Visit} entities and the corresponding DTOs.
  */
 @Service
 public class VisitServiceImpl implements VisitService {
@@ -33,6 +34,12 @@ public class VisitServiceImpl implements VisitService {
         this.visitRepository = visitRepository;
     }
 
+    /**
+     * Creates a new visit record for a person entering the store.
+     *
+     * @param request the entry request carrying the visitor's name
+     * @return the persisted visit as a response DTO
+     */
     @Override
     @Transactional
     public VisitResponse registerEntry(VisitEntryRequest request) {
@@ -43,19 +50,29 @@ public class VisitServiceImpl implements VisitService {
         return VisitMapper.toResponse(savedVisit);
     }
 
+    /**
+     * Closes an open visit by stamping its exit time and attaching the purchased
+     * items reported in the request. Any items previously associated with the
+     * visit are replaced by the new set.
+     *
+     * @param id      the identifier of the visit to close
+     * @param request the leave request carrying the purchased items and total spent
+     * @return the updated visit as a response DTO
+     * @throws VisitNotFoundException if no visit exists with the given {@code id}
+     */
     @Override
     @Transactional
     public VisitResponse registerExit(Long id, VisitLeaveRequest request) {
         log.info("Registering exit for visit ID: {}", id);
         return visitRepository.findById(id).map(visit -> {
             visit.setExitTime(LocalDateTime.now());
-            
+
             // Clear existing items before attaching new ones
             int itemsCount = request.purchasedItems() != null ? request.purchasedItems().size() : 0;
             log.debug("Associating {} items with visit ID: {}", itemsCount, id);
 
             visit.getPurchasedItems().clear();
-            
+
             // Map and attach new items
             if (request.purchasedItems() != null) {
                 request.purchasedItems().forEach(itemDto -> {
@@ -63,7 +80,7 @@ public class VisitServiceImpl implements VisitService {
                     visit.addPurchasedItem(item);
                 });
             }
-            
+
             visit.setTotalSpent(request.totalSpent());
             Visit updatedVisit = visitRepository.save(visit);
             log.info("Exit processed for visit ID: {}. Total: {}", id, updatedVisit.getTotalSpent());
@@ -74,6 +91,12 @@ public class VisitServiceImpl implements VisitService {
         });
     }
 
+    /**
+     * Returns every visit recorded in the system, both active and completed,
+     * ordered as returned by the underlying repository.
+     *
+     * @return the list of visits; never {@code null}
+     */
     @Override
     @Transactional(readOnly = true)
     public List<VisitResponse> getAllVisits() {
@@ -82,6 +105,12 @@ public class VisitServiceImpl implements VisitService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Returns the visits whose visitors are still inside the store (i.e. their
+     * {@code exitTime} is {@code null}).
+     *
+     * @return the list of active visits; never {@code null}
+     */
     @Override
     @Transactional(readOnly = true)
     public List<VisitResponse> getActiveVisits() {
