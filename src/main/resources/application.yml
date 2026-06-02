@@ -27,3 +27,7 @@ springdoc:
     path: /api-docs
   swagger-ui:
     path: /swagger-ui.html
+  group-configs:
+    - group: store-tracker
+      paths-to-match: /api/**
+      packages-to-scan: com.store.tracker.controller
