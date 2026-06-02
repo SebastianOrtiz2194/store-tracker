@@ -12,46 +12,46 @@
     <artifactId>tracker</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>store-tracker</name>
-    <description>Microservicio para registrar visitas y compras</description>
+    <description>Spring Modulith tracking customer visits and purchases in retail stores</description>
 
     <properties>
         <java.version>21</java.version>
     </properties>
 
     <dependencies>
-        <!-- Spring Web para API REST -->
+        <!-- Spring Web for the REST API -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
-        <!-- Spring Data JPA para base de datos -->
+        <!-- Spring Data JPA for the database layer -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
         </dependency>
-        <!-- H2 Database  -->
+        <!-- In-memory H2 database -->
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
             <scope>runtime</scope>
         </dependency>
-        <!-- Validación de Beans -->
+        <!-- Bean Validation (Jakarta / JSR-380) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
-        <!-- Spring Boot Actuator para métricas y salud -->
+        <!-- Spring Boot Actuator for health and metrics -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
-        <!-- OpenAPI / Swagger para documentación interactiva -->
+        <!-- OpenAPI / Swagger interactive documentation -->
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
             <version>2.3.0</version>
         </dependency>
-        <!-- Lombok para reducir boilerplate -->
+        <!-- Lombok to reduce boilerplate -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
