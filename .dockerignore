@@ -1,0 +1,54 @@
+# Build output
+target/
+*.class
+*.jar
+*.war
+bin/
+
+# Source control
+.git/
+.gitignore
+.gitattributes
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.iws
+.settings/
+.project
+.classpath
+.factorypath
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Environment and local config
+.env
+*.env.local
+application-local.yml
+application-local.properties
+
+# CI (not needed in image)
+.github/
+
+# Documentation assets
+docs/
+
+# Build/CI metadata
+.mvn/wrapper/maven-wrapper.jar
+
+# Project notes
+*.md
+!README.md
+plan.md
+walkthrough.md
+skills-lock.json
+
+# Postman collection (not needed at runtime)
+*.json
+!maven-wrapper.properties
