@@ -154,6 +154,26 @@ All credentials are environment-driven. There are no default secrets.
 
 - **`dev`** — H2 in-memory, SQL logging, H2 console enabled, debug-level app logs
 - **`prod`** — PostgreSQL, `ddl-auto: validate`, error messages hidden, info-level logs
+- **`local`** — personal overrides layered on top of `dev`. Backed by a gitignored `application-local.yml`; see [Local Profile](#local-profile).
+
+### Local Profile
+
+For a fully IDE-driven dev loop without environment variables, create `src/main/resources/application-local.yml` (already covered by `.gitignore`) and activate the `local` profile in your run configuration:
+
+- **Environment variable**: `SPRING_PROFILES_ACTIVE=local`
+- **Program argument**: `--spring.profiles.active=local`
+
+The file is auto-loaded by Spring Boot and may override any value that would otherwise come from the environment — `ADMIN_PASSWORD`, datasource credentials, H2 console settings, etc. Suggested starter content:
+
+```yaml
+ADMIN_PASSWORD: devpass
+
+spring:
+  datasource:
+    password: local-dev-password
+```
+
+The CI workflow is unaffected because it supplies the same values via environment variables, which take priority over YAML. **Do not commit this file**; it is gitignored for a reason. Do not use its values in any deployed environment.
 
 ## API
 
