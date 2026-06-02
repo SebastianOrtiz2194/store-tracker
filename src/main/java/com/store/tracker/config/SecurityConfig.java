@@ -27,6 +27,9 @@ public class SecurityConfig {
     @Value("${ADMIN_PASSWORD}")
     private String adminPassword;
 
+    @Value("${app.admin.username:admin}")
+    private String adminUsername;
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
@@ -48,7 +51,7 @@ public class SecurityConfig {
     public UserDetailsService userDetailsService(PasswordEncoder passwordEncoder) {
         // In production, credentials would come from a database or LDAP
         UserDetails admin = User.builder()
-            .username("admin")
+            .username(adminUsername)
             .password(passwordEncoder.encode(adminPassword))
             .roles("ADMIN")
             .build();
