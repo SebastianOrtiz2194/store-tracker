@@ -17,7 +17,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Service layer implementation for visit management. Coordinates persistence
@@ -102,7 +101,7 @@ public class VisitServiceImpl implements VisitService {
     public List<VisitResponse> getAllVisits() {
         return visitRepository.findAll().stream()
                 .map(VisitMapper::toResponse)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     /**
@@ -117,6 +116,6 @@ public class VisitServiceImpl implements VisitService {
         log.debug("Fetching active visits (visitors still inside the store)");
         return visitRepository.findByExitTimeIsNull().stream()
                 .map(VisitMapper::toResponse)
-                .collect(Collectors.toList());
+                .toList();
     }
 }
