@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
  * @param data      the response payload; {@code null} on error responses
  * @param timestamp the moment the response was produced
  */
-public record ApiResponse<T>(
+public record ResponseEnvelope<T>(
     boolean success,
     String message,
     T data,
@@ -26,20 +26,20 @@ public record ApiResponse<T>(
      * @param message a human-readable description
      * @param data    the payload
      */
-    public ApiResponse(boolean success, String message, T data) {
+    public ResponseEnvelope(boolean success, String message, T data) {
         this(success, message, data, LocalDateTime.now());
     }
 
     /**
      * Builds a successful response with the given payload and message.
      *
-     * @param <T>    the payload type
-     * @param data   the payload to wrap
+     * @param <T>     the payload type
+     * @param data    the payload to wrap
      * @param message the success message
-     * @return a new {@link ApiResponse} marked as successful
+     * @return a new {@link ResponseEnvelope} marked as successful
      */
-    public static <T> ApiResponse<T> success(T data, String message) {
-        return new ApiResponse<>(true, message, data);
+    public static <T> ResponseEnvelope<T> success(T data, String message) {
+        return new ResponseEnvelope<>(true, message, data);
     }
 
     /**
@@ -47,9 +47,9 @@ public record ApiResponse<T>(
      *
      * @param <T>     the (unused) payload type
      * @param message the error message
-     * @return a new {@link ApiResponse} marked as failed with a {@code null} payload
+     * @return a new {@link ResponseEnvelope} marked as failed with a {@code null} payload
      */
-    public static <T> ApiResponse<T> error(String message) {
-        return new ApiResponse<>(false, message, null);
+    public static <T> ResponseEnvelope<T> error(String message) {
+        return new ResponseEnvelope<>(false, message, null);
     }
 }

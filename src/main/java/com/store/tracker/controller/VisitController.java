@@ -1,12 +1,13 @@
 package com.store.tracker.controller;
 
-import com.store.tracker.dto.ApiResponse;
+import com.store.tracker.dto.ResponseEnvelope;
 import com.store.tracker.dto.VisitEntryRequest;
 import com.store.tracker.dto.VisitLeaveRequest;
 import com.store.tracker.dto.VisitResponse;
 import com.store.tracker.service.VisitService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -35,11 +36,11 @@ public class VisitController {
         summary = "Register entry",
         description = "Creates a new visit record when a person enters the store"
     )
-    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Entry registered successfully")
-    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid request payload")
-    public ResponseEntity<ApiResponse<VisitResponse>> registerEntry(@Valid @RequestBody VisitEntryRequest request) {
+    @ApiResponse(responseCode = "200", description = "Entry registered successfully")
+    @ApiResponse(responseCode = "400", description = "Invalid request payload")
+    public ResponseEntity<ResponseEnvelope<VisitResponse>> registerEntry(@Valid @RequestBody VisitEntryRequest request) {
         VisitResponse response = visitService.registerEntry(request);
-        return ResponseEntity.ok(ApiResponse.success(response, "Entry registered successfully"));
+        return ResponseEntity.ok(ResponseEnvelope.success(response, "Entry registered successfully"));
     }
 
     @PutMapping("/{id}/leave")
@@ -48,15 +49,15 @@ public class VisitController {
         summary = "Register exit and purchases",
         description = "Updates an existing visit with exit time and purchased items"
     )
-    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Exit registered successfully")
-    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid request payload")
-    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Visit not found")
-    public ResponseEntity<ApiResponse<VisitResponse>> registerExit(
+    @ApiResponse(responseCode = "200", description = "Exit registered successfully")
+    @ApiResponse(responseCode = "400", description = "Invalid request payload")
+    @ApiResponse(responseCode = "404", description = "Visit not found")
+    public ResponseEntity<ResponseEnvelope<VisitResponse>> registerExit(
             @Parameter(description = "Unique visit ID") @PathVariable Long id,
             @Valid @RequestBody VisitLeaveRequest request) {
 
         VisitResponse response = visitService.registerExit(id, request);
-        return ResponseEntity.ok(ApiResponse.success(response, "Exit registered successfully"));
+        return ResponseEntity.ok(ResponseEnvelope.success(response, "Exit registered successfully"));
     }
 
     @GetMapping
@@ -65,10 +66,10 @@ public class VisitController {
         summary = "Get full history",
         description = "Returns all visits recorded in the system, both active and completed"
     )
-    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Visit list retrieved")
-    public ResponseEntity<ApiResponse<List<VisitResponse>>> getAllVisits() {
+    @ApiResponse(responseCode = "200", description = "Visit list retrieved")
+    public ResponseEntity<ResponseEnvelope<List<VisitResponse>>> getAllVisits() {
         List<VisitResponse> visits = visitService.getAllVisits();
-        return ResponseEntity.ok(ApiResponse.success(visits, "Visit list retrieved"));
+        return ResponseEntity.ok(ResponseEnvelope.success(visits, "Visit list retrieved"));
     }
 
     @GetMapping("/active")
@@ -77,9 +78,9 @@ public class VisitController {
         summary = "List active visits",
         description = "Returns visitors who have entered but not yet recorded their exit"
     )
-    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Active visit list retrieved")
-    public ResponseEntity<ApiResponse<List<VisitResponse>>> getActiveVisits() {
+    @ApiResponse(responseCode = "200", description = "Active visit list retrieved")
+    public ResponseEntity<ResponseEnvelope<List<VisitResponse>>> getActiveVisits() {
         List<VisitResponse> visits = visitService.getActiveVisits();
-        return ResponseEntity.ok(ApiResponse.success(visits, "Active visit list retrieved"));
+        return ResponseEntity.ok(ResponseEnvelope.success(visits, "Active visit list retrieved"));
     }
 }

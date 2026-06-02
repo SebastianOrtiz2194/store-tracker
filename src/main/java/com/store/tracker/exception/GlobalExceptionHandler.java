@@ -1,6 +1,6 @@
 package com.store.tracker.exception;
 
-import com.store.tracker.dto.ApiResponse;
+import com.store.tracker.dto.ResponseEnvelope;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 
 /**
  * Global exception handler that ensures all error responses
- * follow the standard ApiResponse format.
+ * follow the standard {@link ResponseEnvelope} format.
  */
 @ControllerAdvice
 public class GlobalExceptionHandler {
@@ -24,9 +24,9 @@ public class GlobalExceptionHandler {
      * Returns a map of failed fields and their error messages.
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ApiResponse<Map<String, String>>> handleValidationExceptions(
+    public ResponseEntity<ResponseEnvelope<Map<String, String>>> handleValidationExceptions(
             MethodArgumentNotValidException ex) {
-        
+
         Map<String, String> errors = new HashMap<>();
         ex.getBindingResult().getAllErrors().forEach((error) -> {
             String fieldName = ((FieldError) error).getField();
@@ -37,26 +37,26 @@ public class GlobalExceptionHandler {
         String message = "Validation error: " + errors.keySet().stream().collect(Collectors.joining(", "));
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
-                .body(new ApiResponse<>(false, message, errors));
+                .body(new ResponseEnvelope<>(false, message, errors));
     }
 
     /**
      * Handles VisitNotFoundException when a requested visit does not exist.
      */
     @ExceptionHandler(VisitNotFoundException.class)
-    public ResponseEntity<ApiResponse<Void>> handleVisitNotFoundException(VisitNotFoundException ex) {
+    public ResponseEntity<ResponseEnvelope<Void>> handleVisitNotFoundException(VisitNotFoundException ex) {
         return ResponseEntity
                 .status(HttpStatus.NOT_FOUND)
-                .body(ApiResponse.error(ex.getMessage()));
+                .body(ResponseEnvelope.error(ex.getMessage()));
     }
 
     /**
      * Catch-all handler for any unhandled exceptions.
      */
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiResponse<Void>> handleGeneralException(Exception ex) {
+    public ResponseEntity<ResponseEnvelope<Void>> handleGeneralException(Exception ex) {
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ApiResponse.error("An unexpected error occurred: " + ex.getMessage()));
+                .body(ResponseEnvelope.error("An unexpected error occurred: " + ex.getMessage()));
     }
 }
