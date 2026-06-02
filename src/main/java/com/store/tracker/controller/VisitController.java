@@ -7,7 +7,6 @@ import com.store.tracker.dto.VisitResponse;
 import com.store.tracker.service.VisitService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -36,10 +35,8 @@ public class VisitController {
         summary = "Register entry",
         description = "Creates a new visit record when a person enters the store"
     )
-    @ApiResponses({
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Entry registered successfully"),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid request payload")
-    })
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Entry registered successfully")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid request payload")
     public ResponseEntity<ApiResponse<VisitResponse>> registerEntry(@Valid @RequestBody VisitEntryRequest request) {
         VisitResponse response = visitService.registerEntry(request);
         return ResponseEntity.ok(ApiResponse.success(response, "Entry registered successfully"));
@@ -51,11 +48,9 @@ public class VisitController {
         summary = "Register exit and purchases",
         description = "Updates an existing visit with exit time and purchased items"
     )
-    @ApiResponses({
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Exit registered successfully"),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid request payload"),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Visit not found")
-    })
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Exit registered successfully")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid request payload")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Visit not found")
     public ResponseEntity<ApiResponse<VisitResponse>> registerExit(
             @Parameter(description = "Unique visit ID") @PathVariable Long id,
             @Valid @RequestBody VisitLeaveRequest request) {
