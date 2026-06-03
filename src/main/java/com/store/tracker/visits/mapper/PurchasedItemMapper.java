@@ -1,8 +1,8 @@
-package com.store.tracker.mapper;
+package com.store.tracker.visits.mapper;
 
-import com.store.tracker.dto.PurchasedItemDto;
-import com.store.tracker.entity.PurchasedItem;
-import com.store.tracker.entity.Visit;
+import com.store.tracker.visits.dto.PurchasedItemDto;
+import com.store.tracker.visits.entity.PurchasedItem;
+import com.store.tracker.visits.entity.Visit;
 
 import java.util.List;
 

@@ -1,10 +1,10 @@
-package com.store.tracker.controller;
+package com.store.tracker.visits.controller;
 
 import com.store.tracker.dto.ResponseEnvelope;
-import com.store.tracker.dto.VisitEntryRequest;
-import com.store.tracker.dto.VisitLeaveRequest;
-import com.store.tracker.dto.VisitResponse;
-import com.store.tracker.service.VisitService;
+import com.store.tracker.visits.dto.VisitEntryRequest;
+import com.store.tracker.visits.dto.VisitLeaveRequest;
+import com.store.tracker.visits.dto.VisitResponse;
+import com.store.tracker.visits.service.VisitService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;

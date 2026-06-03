@@ -1,6 +1,6 @@
-package com.store.tracker.repository;
+package com.store.tracker.visits.repository;
 
-import com.store.tracker.entity.Visit;
+import com.store.tracker.visits.entity.Visit;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

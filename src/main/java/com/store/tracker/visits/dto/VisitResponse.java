@@ -1,4 +1,4 @@
-package com.store.tracker.dto;
+package com.store.tracker.visits.dto;
 
 import java.time.LocalDateTime;
 import java.util.List;

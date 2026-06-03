@@ -30,4 +30,4 @@ springdoc:
   group-configs:
     - group: store-tracker
       paths-to-match: /api/**
-      packages-to-scan: com.store.tracker.controller
+      packages-to-scan: com.store.tracker.visits.controller

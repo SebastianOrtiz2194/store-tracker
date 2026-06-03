@@ -1,4 +1,4 @@
-package com.store.tracker.entity;
+package com.store.tracker.visits.entity;
 
 import jakarta.persistence.*;
 import lombok.*;

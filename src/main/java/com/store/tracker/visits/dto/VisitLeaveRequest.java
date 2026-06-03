@@ -1,4 +1,4 @@
-package com.store.tracker.dto;
+package com.store.tracker.visits.dto;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;

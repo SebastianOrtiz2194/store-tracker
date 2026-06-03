@@ -1,15 +1,15 @@
-package com.store.tracker.service.impl;
+package com.store.tracker.visits.service.impl;
 
-import com.store.tracker.dto.VisitEntryRequest;
-import com.store.tracker.dto.VisitLeaveRequest;
-import com.store.tracker.dto.VisitResponse;
-import com.store.tracker.entity.PurchasedItem;
-import com.store.tracker.entity.Visit;
+import com.store.tracker.visits.dto.VisitEntryRequest;
+import com.store.tracker.visits.dto.VisitLeaveRequest;
+import com.store.tracker.visits.dto.VisitResponse;
+import com.store.tracker.visits.entity.PurchasedItem;
+import com.store.tracker.visits.entity.Visit;
 import com.store.tracker.exception.VisitNotFoundException;
-import com.store.tracker.mapper.PurchasedItemMapper;
-import com.store.tracker.mapper.VisitMapper;
-import com.store.tracker.repository.VisitRepository;
-import com.store.tracker.service.VisitService;
+import com.store.tracker.visits.mapper.PurchasedItemMapper;
+import com.store.tracker.visits.mapper.VisitMapper;
+import com.store.tracker.visits.repository.VisitRepository;
+import com.store.tracker.visits.service.VisitService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;

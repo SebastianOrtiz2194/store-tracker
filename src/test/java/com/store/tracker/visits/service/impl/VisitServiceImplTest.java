@@ -1,11 +1,11 @@
-package com.store.tracker.service.impl;
+package com.store.tracker.visits.service.impl;
 
-import com.store.tracker.dto.VisitEntryRequest;
-import com.store.tracker.dto.VisitLeaveRequest;
-import com.store.tracker.dto.VisitResponse;
-import com.store.tracker.entity.Visit;
+import com.store.tracker.visits.dto.VisitEntryRequest;
+import com.store.tracker.visits.dto.VisitLeaveRequest;
+import com.store.tracker.visits.dto.VisitResponse;
+import com.store.tracker.visits.entity.Visit;
 import com.store.tracker.exception.VisitNotFoundException;
-import com.store.tracker.repository.VisitRepository;
+import com.store.tracker.visits.repository.VisitRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

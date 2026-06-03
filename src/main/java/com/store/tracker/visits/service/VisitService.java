@@ -1,8 +1,8 @@
-package com.store.tracker.service;
+package com.store.tracker.visits.service;
 
-import com.store.tracker.dto.VisitEntryRequest;
-import com.store.tracker.dto.VisitLeaveRequest;
-import com.store.tracker.dto.VisitResponse;
+import com.store.tracker.visits.dto.VisitEntryRequest;
+import com.store.tracker.visits.dto.VisitLeaveRequest;
+import com.store.tracker.visits.dto.VisitResponse;
 
 import java.util.List;
 

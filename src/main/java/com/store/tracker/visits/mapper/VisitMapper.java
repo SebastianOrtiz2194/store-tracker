@@ -1,7 +1,7 @@
-package com.store.tracker.mapper;
+package com.store.tracker.visits.mapper;
 
-import com.store.tracker.dto.VisitResponse;
-import com.store.tracker.entity.Visit;
+import com.store.tracker.visits.dto.VisitResponse;
+import com.store.tracker.visits.entity.Visit;
 
 /**
  * Conversion helpers between {@link Visit} entities and {@link VisitResponse}
