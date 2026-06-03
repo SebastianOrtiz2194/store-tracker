@@ -74,6 +74,13 @@
             <artifactId>spring-security-test</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- Spring Modulith boundary verification (ArchUnit-based) -->
+        <dependency>
+            <groupId>org.springframework.modulith</groupId>
+            <artifactId>spring-modulith-starter-test</artifactId>
+            <version>1.1.7</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
