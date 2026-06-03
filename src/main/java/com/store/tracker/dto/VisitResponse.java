@@ -14,8 +14,6 @@ import java.util.List;
  * @param exitTime       the time the visitor left the store; {@code null} if still inside
  * @param purchasedItems the items bought during the visit; may be {@code null} when omitted
  * @param totalSpent     the total amount spent; {@code null} until the visit has an exit
- * @param createdAt      the audit timestamp for record creation
- * @param updatedAt      the audit timestamp for the last modification
  */
 public record VisitResponse(
     Long id,
@@ -23,18 +21,16 @@ public record VisitResponse(
     LocalDateTime entryTime,
     LocalDateTime exitTime,
     List<PurchasedItemDto> purchasedItems,
-    Double totalSpent,
-    LocalDateTime createdAt,
-    LocalDateTime updatedAt
+    Double totalSpent
 ) {
     /**
-     * Compact constructor used for entry-only responses, where exit, purchases, and
-     * audit timestamps are not yet known.
+     * Compact constructor used for entry-only responses, where exit and purchases
+     * are not yet known.
      *
      * @param id         the visit's database identifier
      * @param personName the visitor's name
      */
     public VisitResponse(Long id, String personName) {
-        this(id, personName, null, null, null, null, null, null);
+        this(id, personName, null, null, null, null);
     }
 }

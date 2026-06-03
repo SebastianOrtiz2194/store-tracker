@@ -91,7 +91,7 @@ public class VisitControllerTest {
         VisitLeaveRequest request = new VisitLeaveRequest(List.of(), 150.0);
         VisitResponse response = new VisitResponse(
                 1L, "Juan Perez", LocalDateTime.now().minusHours(1),
-                LocalDateTime.now(), List.of(), 150.0, null, null);
+                LocalDateTime.now(), List.of(), 150.0);
         when(visitService.registerExit(anyLong(), any(VisitLeaveRequest.class))).thenReturn(response);
 
         // when / then

@@ -1,35 +1,20 @@
 package com.store.tracker.dto;
 
-import java.time.LocalDateTime;
-
 /**
  * Standard envelope for every API response produced by the service.
- * Wraps the payload with a success flag, a human-readable message, and a
- * server-side timestamp.
+ * Wraps the payload with a success flag and a human-readable message.
+ * Response timing is conveyed by HTTP {@code Date} / {@code Last-Modified} headers.
  *
- * @param <T>       the type of the wrapped payload
- * @param success   {@code true} when the operation succeeded, {@code false} otherwise
- * @param message   a short human-readable description of the outcome
- * @param data      the response payload; {@code null} on error responses
- * @param timestamp the moment the response was produced
+ * @param <T>     the type of the wrapped payload
+ * @param success {@code true} when the operation succeeded, {@code false} otherwise
+ * @param message a short human-readable description of the outcome
+ * @param data    the response payload; {@code null} on error responses
  */
 public record ResponseEnvelope<T>(
     boolean success,
     String message,
-    T data,
-    LocalDateTime timestamp
+    T data
 ) {
-    /**
-     * Compact constructor that auto-stamps the response with the current time.
-     *
-     * @param success {@code true} for successful responses
-     * @param message a human-readable description
-     * @param data    the payload
-     */
-    public ResponseEnvelope(boolean success, String message, T data) {
-        this(success, message, data, LocalDateTime.now());
-    }
-
     /**
      * Builds a successful response with the given payload and message.
      *

@@ -28,9 +28,7 @@ public class VisitMapper {
             entity.getEntryTime(),
             entity.getExitTime(),
             PurchasedItemMapper.toDtoList(entity.getPurchasedItems()),
-            entity.getTotalSpent(),
-            entity.getCreatedAt(),
-            entity.getUpdatedAt()
+            entity.getTotalSpent()
         );
     }
 }

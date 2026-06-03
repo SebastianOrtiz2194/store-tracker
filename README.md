@@ -61,7 +61,7 @@ Cross-cutting concerns:
 - **`SecurityConfig`** — stateless Basic Auth. Swagger UI and `/actuator/health/**` are public; all other routes require authentication.
 - **`GlobalExceptionHandler`** — `@ControllerAdvice` that maps validation and domain exceptions to the standard [`ApiResponse`](#api) envelope.
 - **`VisitMapper` / `PurchasedItemMapper`** — hand-rolled entity↔DTO conversion. No MapStruct dependency.
-- **`ApiResponse<T>`** — uniform JSON envelope with `success`, `message`, `data`, `timestamp`.
+- **`ApiResponse<T>`** — uniform JSON envelope with `success`, `message`, `data`.
 - **`JpaConfig`** — enables JPA auditing so `@CreatedDate` and `@LastModifiedDate` are populated automatically.
 - **`ApplicationProperties`** — type-safe configuration bound to the `app.*` prefix.
 
@@ -192,8 +192,7 @@ All endpoints live under `/api/visits` and require HTTP Basic auth. Responses fo
 {
   "success": true,
   "message": "Entry registered successfully",
-  "data": { },
-  "timestamp": "2026-06-01T10:00:00"
+  "data": { }
 }
 ```
 
