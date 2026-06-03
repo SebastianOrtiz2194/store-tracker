@@ -1,10 +1,8 @@
 # Store Tracker
 
-> Spring Modulith tracking customer visits and purchases in retail stores.
+A Spring Boot service that records customer entries and exits at a retail store, captures the items purchased during each visit, and exposes a REST API for querying visit history.
 
-A Spring Boot service that records customer entries and exits at a retail store, captures the items purchased during each visit, and exposes a small REST API for querying visit history and who's currently inside the store.
-
-The project is currently organized as a layered monolith and is being migrated to a [Spring Modulith](https://spring.io/projects/spring-modulith): a single deployable with a clear, ArchUnit-enforced module boundary around the `visits` domain. The package layout reflects the first step of that migration, and a second bounded context (e.g. inventory, customers, billing) can be extracted into its own service with minimal refactoring.
+The service is organized as a [Spring Modulith](https://spring.io/projects/spring-modulith) with a single `visits` bounded context. Module boundaries are enforced by ArchUnit on every build. A second bounded context can be extracted into its own service with minimal refactoring.
 
 ## Table of Contents
 
@@ -32,75 +30,40 @@ The project is currently organized as a layered monolith and is being migrated t
 
 ## Architecture
 
-The service follows a three-layer design:
+A [Spring Modulith](https://spring.io/projects/spring-modulith) with four logical modules verified at build time by `ModularityTests`:
 
 ```
-HTTP Request
-     │
-     ▼
-┌──────────────┐
-│  Controller  │  VisitController  (@RestController, @Valid request bodies)
-└──────┬───────┘
-       │
-       ▼
-┌──────────────┐
-│   Service    │  VisitServiceImpl  (@Transactional boundaries, business rules)
-└──────┬───────┘
-       │
-       ▼
-┌──────────────┐
-│  Repository  │  VisitRepository  (Spring Data JPA)
-└──────┬───────┘
-       │
-       ▼
-   Database     H2 (dev) / PostgreSQL (prod)
+Root  (TrackerApplication)
+├── config      — security, JPA auditing, application properties
+├── dto         — shared transport layer (ResponseEnvelope)
+├── exception   — global error handling
+└── visits      — bounded context: controller, service, repository, entity, DTO, mapper
 ```
 
-Cross-cutting concerns:
-
-- **`SecurityConfig`** — stateless Basic Auth. Swagger UI and `/actuator/health/**` are public; all other routes require authentication.
-- **`GlobalExceptionHandler`** — `@ControllerAdvice` that maps validation and domain exceptions to the standard [`ApiResponse`](#api) envelope.
-- **`VisitMapper` / `PurchasedItemMapper`** — hand-rolled entity↔DTO conversion. No MapStruct dependency.
-- **`ApiResponse<T>`** — uniform JSON envelope with `success`, `message`, `data`.
-- **`JpaConfig`** — enables JPA auditing so `@CreatedDate` and `@LastModifiedDate` are populated automatically.
-- **`ApplicationProperties`** — type-safe configuration bound to the `app.*` prefix.
+Dependencies all flow inward: `visits` depends on `config`, `dto`, and `exception`. No module depends on another domain module, preventing cyclic coupling.
 
 ## Project Structure
 
 ```
 src/main/java/com/store/tracker/
-├── TrackerApplication.java        # entry point
-├── config/
-│   ├── ApplicationProperties.java # @ConfigurationProperties(prefix = "app")
-│   ├── JpaConfig.java             # @EnableJpaAuditing
-│   └── SecurityConfig.java        # basic auth, ADMIN_PASSWORD env
-├── controller/
-│   └── VisitController.java
-├── service/
-│   ├── VisitService.java          # interface
-│   └── impl/VisitServiceImpl.java
-├── repository/
-│   └── VisitRepository.java
-├── entity/
-│   ├── Visit.java
-│   └── PurchasedItem.java
-├── dto/
-│   ├── ApiResponse.java
-│   ├── PurchasedItemDto.java
-│   ├── VisitEntryRequest.java
-│   ├── VisitLeaveRequest.java
-│   └── VisitResponse.java
-├── mapper/
-│   ├── VisitMapper.java
-│   └── PurchasedItemMapper.java
-└── exception/
-    ├── GlobalExceptionHandler.java
-    └── VisitNotFoundException.java
+├── TrackerApplication.java
+├── config/{ApplicationProperties, JpaConfig, SecurityConfig}.java
+├── dto/{ResponseEnvelope}.java
+├── exception/{GlobalExceptionHandler, VisitNotFoundException}.java
+└── visits/
+    ├── controller/VisitController.java
+    ├── service/{VisitService, impl/VisitServiceImpl}.java
+    ├── repository/VisitRepository.java
+    ├── entity/{Visit, PurchasedItem}.java
+    ├── dto/{PurchasedItemDto, VisitEntryRequest, VisitLeaveRequest, VisitResponse}.java
+    └── mapper/{VisitMapper, PurchasedItemMapper}.java
 
 src/test/java/com/store/tracker/
-├── controller/VisitControllerTest.java   # @WebMvcTest, 8 cases
-├── service/impl/VisitServiceImplTest.java # Mockito + AssertJ, 7 cases
-└── repository/VisitRepositoryTest.java   # @DataJpaTest, 5 cases
+├── ModularityTests.java
+└── visits/
+    ├── controller/VisitControllerTest.java
+    ├── repository/VisitRepositoryTest.java
+    └── service/impl/VisitServiceImplTest.java
 ```
 
 ## Prerequisites
@@ -152,32 +115,13 @@ All credentials are environment-driven. There are no default secrets.
 
 ### Profiles
 
-- **`dev`** — H2 in-memory, SQL logging, H2 console enabled, debug-level app logs
-- **`prod`** — PostgreSQL, `ddl-auto: validate`, error messages hidden, info-level logs
-- **`local`** — personal overrides layered on top of `dev`. Backed by a gitignored `application-local.yml`; see [Local Profile](#local-profile).
-
-### Local Profile
-
-For a fully IDE-driven dev loop without environment variables, create `src/main/resources/application-local.yml` (already covered by `.gitignore`) and activate the `local` profile in your run configuration:
-
-- **Environment variable**: `SPRING_PROFILES_ACTIVE=local`
-- **Program argument**: `--spring.profiles.active=local`
-
-The file is auto-loaded by Spring Boot and may override any value that would otherwise come from the environment — `ADMIN_PASSWORD`, datasource credentials, H2 console settings, etc. Suggested starter content:
-
-```yaml
-ADMIN_PASSWORD: devpass
-
-spring:
-  datasource:
-    password: local-dev-password
-```
-
-The CI workflow is unaffected because it supplies the same values via environment variables, which take priority over YAML. **Do not commit this file**; it is gitignored for a reason. Do not use its values in any deployed environment.
+- **`dev`** — H2 in-memory, SQL logging, H2 console enabled
+- **`prod`** — PostgreSQL, `ddl-auto: validate`
+- **`local`** — personal overrides via gitignored `application-local.yml`
 
 ## API
 
-All endpoints live under `/api/visits` and require HTTP Basic auth. Responses follow the [`ApiResponse<T>`](#response-envelope) envelope.
+All endpoints live under `/api/visits` and require HTTP Basic auth. Responses follow the `ResponseEnvelope<T>` envelope.
 
 | Method | Path | Description |
 |--------|------|-------------|
@@ -235,10 +179,11 @@ curl -u admin:devpass http://localhost:8080/api/visits/active
 
 ## Testing
 
-The project ships with a 20-test suite covering all three layers:
+The project ships with a 21-test suite covering all three layers plus architecture enforcement:
 
 | Test class | Slice | What it covers |
 |------------|-------|----------------|
+| `ModularityTests` | ArchUnit | Module boundary enforcement (no cycles, valid dependencies) |
 | `VisitControllerTest` | `@WebMvcTest` | Endpoint behavior, request validation, security (401/404 paths) |
 | `VisitServiceImplTest` | Mockito + AssertJ | Service logic, exception paths, list-returning methods |
 | `VisitRepositoryTest` | `@DataJpaTest` | `findAll`, `findByExitTimeIsNull`, `save`, empty-list edges |
@@ -252,14 +197,13 @@ mvn test
 ## Operational Notes
 
 - **H2 Console (dev only)** — <http://localhost:8080/h2-console>. JDBC URL `jdbc:h2:mem:storedb`, user `sa`, password from `H2_PASSWORD`.
-- **Actuator health** — <http://localhost:8080/actuator/health>. Unauthenticated for orchestrator probes.
-- **Postman collection** — `Store_Tracker_Postman_Collection.json` is included for quick API exploration. Update the Basic Auth password in Postman to match the `ADMIN_PASSWORD` you set at startup.
-- **Architecture diagrams** — see [`docs/images/`](docs/images/) for the ER and high-level diagrams.
+- **Actuator health** — <http://localhost:8080/actuator/health>. Unauthenticated.
+- **Postman collection** — `Store_Tracker_Postman_Collection.json` for quick API exploration. Update credentials to match the running instance.
 
 ## Roadmap
 
-The project is being incrementally evolved from a layered monolith to a **Spring Modulith** with a clear extraction path:
+- [x] Spring Modulith dependencies and boundary-enforcement test
+- [x] Visit domain moved into `com.store.tracker.visits` package
+- [ ] Event-based communication between modules when a second bounded context emerges
+- [ ] Extract a module into its own service
 
-1. Add `spring-modulith` dependencies and a `ModularityTests` boundary-enforcement test.
-2. Move the visit domain into its own package module (`com.store.tracker.visits`).
-3. Once a second bounded context emerges (inventory, customers, billing, …), extract that module into its own service.
