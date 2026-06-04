@@ -83,6 +83,29 @@ public class VisitServiceImplTest {
     }
 
     @Test
+    void registerExit_WithEmptyItemsAndZeroTotal_ShouldCompleteExit() {
+        // given
+        VisitLeaveRequest request = new VisitLeaveRequest(List.of(), 0.0);
+        when(visitRepository.findById(1L)).thenReturn(Optional.of(mockVisit));
+        when(visitRepository.save(any(Visit.class))).thenReturn(mockVisit);
+
+        // when
+        VisitResponse response = visitService.registerExit(1L, request);
+
+        // then
+        assertThat(response)
+                .isNotNull()
+                .satisfies(r -> {
+                    assertThat(r.exitTime()).isNotNull();
+                    assertThat(r.totalSpent()).isZero();
+                    assertThat(r.purchasedItems()).isEmpty();
+                });
+
+        verify(visitRepository, times(1)).findById(1L);
+        verify(visitRepository, times(1)).save(any(Visit.class));
+    }
+
+    @Test
     void registerExit_WhenVisitDoesNotExist_ShouldThrowException() {
         // given
         VisitLeaveRequest request = new VisitLeaveRequest(null, null);
