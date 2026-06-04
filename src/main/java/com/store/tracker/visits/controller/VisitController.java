@@ -60,6 +60,20 @@ public class VisitController {
         return ResponseEntity.ok(ResponseEnvelope.success(response, "Exit registered successfully"));
     }
 
+    @GetMapping("/{id}")
+    @Operation(
+        operationId = "getVisitById",
+        summary = "Get visit by ID",
+        description = "Returns a single visit identified by its unique ID"
+    )
+    @ApiResponse(responseCode = "200", description = "Visit found")
+    @ApiResponse(responseCode = "404", description = "Visit not found")
+    public ResponseEntity<ResponseEnvelope<VisitResponse>> getVisitById(
+            @Parameter(description = "Unique visit ID") @PathVariable Long id) {
+        VisitResponse visit = visitService.getVisitById(id);
+        return ResponseEntity.ok(ResponseEnvelope.success(visit, "Visit retrieved successfully"));
+    }
+
     @GetMapping
     @Operation(
         operationId = "getAllVisits",

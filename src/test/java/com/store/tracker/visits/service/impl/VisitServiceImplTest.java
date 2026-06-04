@@ -106,6 +106,36 @@ public class VisitServiceImplTest {
     }
 
     @Test
+    void getVisitById_WhenVisitExists_ShouldReturnVisitResponse() {
+        // given
+        when(visitRepository.findById(1L)).thenReturn(Optional.of(mockVisit));
+
+        // when
+        VisitResponse response = visitService.getVisitById(1L);
+
+        // then
+        assertThat(response)
+                .isNotNull()
+                .extracting(VisitResponse::personName)
+                .isEqualTo("Juan Perez");
+
+        verify(visitRepository, times(1)).findById(1L);
+    }
+
+    @Test
+    void getVisitById_WhenVisitDoesNotExist_ShouldThrowException() {
+        // given
+        when(visitRepository.findById(99L)).thenReturn(Optional.empty());
+
+        // when / then
+        assertThatThrownBy(() -> visitService.getVisitById(99L))
+                .isInstanceOf(VisitNotFoundException.class)
+                .hasMessageContaining("99");
+
+        verify(visitRepository, times(1)).findById(99L);
+    }
+
+    @Test
     void registerExit_WhenVisitDoesNotExist_ShouldThrowException() {
         // given
         VisitLeaveRequest request = new VisitLeaveRequest(null, null);

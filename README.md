@@ -127,6 +127,7 @@ All endpoints live under `/api/visits` and require HTTP Basic auth. Responses fo
 |--------|------|-------------|
 | `POST` | `/api/visits/enter` | Register a customer entry |
 | `PUT` | `/api/visits/{id}/leave` | Register exit with purchased items |
+| `GET` | `/api/visits/{id}` | Fetch a single visit by ID |
 | `GET` | `/api/visits` | Full visit history |
 | `GET` | `/api/visits/active` | Visitors currently inside the store |
 

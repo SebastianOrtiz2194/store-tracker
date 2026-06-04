@@ -91,6 +91,25 @@ public class VisitServiceImpl implements VisitService {
     }
 
     /**
+     * Fetches a single visit by its identifier.
+     *
+     * @param id the identifier of the visit to retrieve
+     * @return the visit as a response DTO
+     * @throws VisitNotFoundException if no visit exists with the given {@code id}
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public VisitResponse getVisitById(Long id) {
+        log.debug("Fetching visit with ID: {}", id);
+        return visitRepository.findById(id)
+                .map(VisitMapper::toResponse)
+                .orElseThrow(() -> {
+                    log.warn("Visit not found with ID: {}", id);
+                    return new VisitNotFoundException("Visit not found with ID: " + id);
+                });
+    }
+
+    /**
      * Returns every visit recorded in the system, both active and completed,
      * ordered as returned by the underlying repository.
      *

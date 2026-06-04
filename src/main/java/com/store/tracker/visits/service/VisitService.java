@@ -12,6 +12,7 @@ import java.util.List;
 public interface VisitService {
     VisitResponse registerEntry(VisitEntryRequest request);
     VisitResponse registerExit(Long id, VisitLeaveRequest request);
+    VisitResponse getVisitById(Long id);
     List<VisitResponse> getAllVisits();
     List<VisitResponse> getActiveVisits();
 }

@@ -157,6 +157,36 @@ public class VisitControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "admin", roles = {"ADMIN"})
+    void getVisitById_WhenVisitExists_ShouldReturn200() throws Exception {
+        // given
+        VisitResponse response = new VisitResponse(1L, "Juan Perez");
+        when(visitService.getVisitById(1L)).thenReturn(response);
+
+        // when / then
+        mockMvc.perform(get("/api/visits/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.message").value("Visit retrieved successfully"))
+                .andExpect(jsonPath("$.data.id").value(1))
+                .andExpect(jsonPath("$.data.personName").value("Juan Perez"));
+    }
+
+    @Test
+    @WithMockUser(username = "admin", roles = {"ADMIN"})
+    void getVisitById_WhenVisitNotFound_ShouldReturn404() throws Exception {
+        // given
+        when(visitService.getVisitById(99L))
+                .thenThrow(new VisitNotFoundException("Visit not found with ID: 99"));
+
+        // when / then
+        mockMvc.perform(get("/api/visits/99"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.message").value("Visit not found with ID: 99"));
+    }
+
+    @Test
     void getAllVisits_WhenUnauthorized_ShouldReturn401() throws Exception {
         mockMvc.perform(get("/api/visits"))
                 .andExpect(status().isUnauthorized());
