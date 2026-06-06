@@ -128,7 +128,7 @@ public class VisitControllerTest {
         // given
         VisitResponse first = new VisitResponse(1L, "Alice");
         VisitResponse second = new VisitResponse(2L, "Bob");
-        when(visitService.getAllVisits()).thenReturn(List.of(first, second));
+        when(visitService.getAllVisits(any(), any())).thenReturn(List.of(first, second));
 
         // when / then
         mockMvc.perform(get("/api/visits"))
@@ -138,6 +138,24 @@ public class VisitControllerTest {
                 .andExpect(jsonPath("$.data", org.hamcrest.Matchers.hasSize(2)))
                 .andExpect(jsonPath("$.data[0].personName").value("Alice"))
                 .andExpect(jsonPath("$.data[1].personName").value("Bob"));
+    }
+
+    @Test
+    @WithMockUser(username = "admin", roles = {"ADMIN"})
+    void getAllVisits_WithDateRange_ShouldReturn200WithFilteredList() throws Exception {
+        // given
+        VisitResponse filtered = new VisitResponse(1L, "In Range");
+        when(visitService.getAllVisits(any(), any())).thenReturn(List.of(filtered));
+
+        // when / then
+        mockMvc.perform(get("/api/visits")
+                        .param("from", "2024-01-01T00:00:00")
+                        .param("to", "2024-12-31T23:59:59"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.message").value("Visit list retrieved"))
+                .andExpect(jsonPath("$.data", org.hamcrest.Matchers.hasSize(1)))
+                .andExpect(jsonPath("$.data[0].personName").value("In Range"));
     }
 
     @Test

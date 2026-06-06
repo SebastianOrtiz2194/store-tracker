@@ -158,7 +158,7 @@ public class VisitServiceImplTest {
         when(visitRepository.findAll()).thenReturn(List.of(mockVisit, secondVisit));
 
         // when
-        List<VisitResponse> responses = visitService.getAllVisits();
+        List<VisitResponse> responses = visitService.getAllVisits(null, null);
 
         // then
         assertThat(responses)
@@ -175,7 +175,7 @@ public class VisitServiceImplTest {
         when(visitRepository.findAll()).thenReturn(List.of());
 
         // when
-        List<VisitResponse> responses = visitService.getAllVisits();
+        List<VisitResponse> responses = visitService.getAllVisits(null, null);
 
         // then
         assertThat(responses)
@@ -183,6 +183,26 @@ public class VisitServiceImplTest {
                 .isEmpty();
 
         verify(visitRepository, times(1)).findAll();
+    }
+
+    @Test
+    void getAllVisits_WithDateRange_ShouldFilterByEntryTime() {
+        // given
+        LocalDateTime from = LocalDateTime.of(2024, 1, 1, 0, 0);
+        LocalDateTime to = LocalDateTime.of(2024, 12, 31, 23, 59);
+        when(visitRepository.findByEntryTimeBetween(from, to)).thenReturn(List.of(mockVisit));
+
+        // when
+        List<VisitResponse> responses = visitService.getAllVisits(from, to);
+
+        // then
+        assertThat(responses)
+                .hasSize(1)
+                .extracting(VisitResponse::personName)
+                .containsExactly("Juan Perez");
+
+        verify(visitRepository, times(1)).findByEntryTimeBetween(from, to);
+        verify(visitRepository, never()).findAll();
     }
 
     @Test
