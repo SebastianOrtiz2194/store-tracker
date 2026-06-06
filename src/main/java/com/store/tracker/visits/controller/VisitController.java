@@ -78,11 +78,15 @@ public class VisitController {
     @Operation(
         operationId = "getAllVisits",
         summary = "Get full history",
-        description = "Returns all visits recorded in the system, both active and completed"
+        description = "Returns all visits recorded in the system, both active and completed. Optionally filtered by an inclusive entry-time range."
     )
     @ApiResponse(responseCode = "200", description = "Visit list retrieved")
-    public ResponseEntity<ResponseEnvelope<List<VisitResponse>>> getAllVisits() {
-        List<VisitResponse> visits = visitService.getAllVisits();
+    public ResponseEntity<ResponseEnvelope<List<VisitResponse>>> getAllVisits(
+            @Parameter(description = "Inclusive lower bound of entry time (ISO-8601, e.g. 2024-01-01T00:00:00)")
+            @RequestParam(required = false) java.time.LocalDateTime from,
+            @Parameter(description = "Inclusive upper bound of entry time (ISO-8601, e.g. 2024-12-31T23:59:59)")
+            @RequestParam(required = false) java.time.LocalDateTime to) {
+        List<VisitResponse> visits = visitService.getAllVisits(from, to);
         return ResponseEntity.ok(ResponseEnvelope.success(visits, "Visit list retrieved"));
     }
 

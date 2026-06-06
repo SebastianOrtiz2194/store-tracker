@@ -111,14 +111,21 @@ public class VisitServiceImpl implements VisitService {
 
     /**
      * Returns every visit recorded in the system, both active and completed,
-     * ordered as returned by the underlying repository.
+     * optionally filtered by an inclusive {@code entryTime} range.
+     * When both bounds are {@code null}, every visit is returned.
      *
+     * @param from the inclusive lower bound of the entry time range, or {@code null} for no lower bound
+     * @param to   the inclusive upper bound of the entry time range, or {@code null} for no upper bound
      * @return the list of visits; never {@code null}
      */
     @Override
     @Transactional(readOnly = true)
-    public List<VisitResponse> getAllVisits() {
-        return visitRepository.findAll().stream()
+    public List<VisitResponse> getAllVisits(LocalDateTime from, LocalDateTime to) {
+        log.debug("Fetching visits with from={}, to={}", from, to);
+        List<Visit> visits = (from != null && to != null)
+                ? visitRepository.findByEntryTimeBetween(from, to)
+                : visitRepository.findAll();
+        return visits.stream()
                 .map(VisitMapper::toResponse)
                 .toList();
     }
