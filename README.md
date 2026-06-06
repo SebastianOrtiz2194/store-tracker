@@ -128,7 +128,7 @@ All endpoints live under `/api/visits` and require HTTP Basic auth. Responses fo
 | `POST` | `/api/visits/enter` | Register a customer entry |
 | `PUT` | `/api/visits/{id}/leave` | Register exit with purchased items |
 | `GET` | `/api/visits/{id}` | Fetch a single visit by ID |
-| `GET` | `/api/visits` | Full visit history |
+| `GET` | `/api/visits` | Full visit history (optionally filtered by `?from=` and `?to=` ISO-8601 timestamps on `entryTime`) |
 | `GET` | `/api/visits/active` | Visitors currently inside the store |
 
 ### Response Envelope
@@ -171,6 +171,12 @@ curl -u admin:devpass -X PUT http://localhost:8080/api/visits/1/leave \
 
 ```bash
 curl -u admin:devpass http://localhost:8080/api/visits/active
+```
+
+**List visits within a date range**
+
+```bash
+curl -u admin:devpass "http://localhost:8080/api/visits?from=2024-01-01T00:00:00&to=2024-12-31T23:59:59"
 ```
 
 ### Interactive Documentation
