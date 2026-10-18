@@ -1,0 +1,35 @@
+# Local infrastructure for development and integration testing.
+#
+#   docker compose up -d postgres      start PostgreSQL 16
+#   docker compose down                stop (keeps data)
+#   docker compose down -v             stop and delete the data volume
+#
+# Then run the application against it with the `postgres` profile:
+#
+#   SPRING_PROFILES_ACTIVE=postgres ADMIN_PASSWORD=devpass mvn spring-boot:run
+
+name: store-tracker
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: store-tracker-postgres
+    environment:
+      POSTGRES_DB: ${DB_NAME:-store_tracker}
+      POSTGRES_USER: ${DB_USERNAME:-tracker}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-tracker}
+    ports:
+      # Host port is configurable so a locally installed PostgreSQL on 5432
+      # does not block the container. Keep DB_URL in sync when you change it.
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-tracker} -d ${DB_NAME:-store_tracker}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  postgres-data:
