@@ -1,6 +1,6 @@
 package com.store.tracker.config;
 
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
@@ -19,17 +19,33 @@ import org.springframework.security.web.SecurityFilterChain;
 /**
  * Security configuration for the application.
  * Sets up stateless basic authentication for API endpoints.
+ *
+ * <p>Credentials are read from {@link ApplicationProperties} so that configuration
+ * is bound once, validated at startup and shared with the rest of the context
+ * instead of being resolved ad hoc.
  */
 @Configuration
 @EnableWebSecurity
+@EnableConfigurationProperties(ApplicationProperties.class)
 public class SecurityConfig {
 
-    @Value("${ADMIN_PASSWORD}")
-    private String adminPassword;
+    private final ApplicationProperties properties;
 
-    @Value("${app.admin.username:admin}")
-    private String adminUsername;
+    /**
+     * @param properties bound application configuration; must not be {@code null}
+     */
+    public SecurityConfig(ApplicationProperties properties) {
+        this.properties = properties;
+    }
 
+    /**
+     * Defines the stateless security filter chain: documentation and health
+     * endpoints are public, everything else requires HTTP Basic authentication.
+     *
+     * @param http the security builder provided by Spring Security
+     * @return the configured filter chain
+     * @throws Exception if the filter chain cannot be built
+     */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
@@ -47,18 +63,28 @@ public class SecurityConfig {
         return http.build();
     }
 
+    /**
+     * Creates the in-memory administrator account, hashing the configured password.
+     *
+     * @param passwordEncoder the encoder used to hash the plain-text password
+     * @return a user-details service holding the single administrator
+     */
     @Bean
     public UserDetailsService userDetailsService(PasswordEncoder passwordEncoder) {
         // In production, credentials would come from a database or LDAP
-        UserDetails admin = User.builder()
-            .username(adminUsername)
-            .password(passwordEncoder.encode(adminPassword))
+        ApplicationProperties.Admin admin = properties.getAdmin();
+        UserDetails user = User.builder()
+            .username(admin.getUsername())
+            .password(passwordEncoder.encode(admin.getPassword()))
             .roles("ADMIN")
             .build();
 
-        return new InMemoryUserDetailsManager(admin);
+        return new InMemoryUserDetailsManager(user);
     }
 
+    /**
+     * @return the BCrypt password encoder used for all stored credentials
+     */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();

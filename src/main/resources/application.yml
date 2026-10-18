@@ -31,3 +31,10 @@ springdoc:
     - group: store-tracker
       paths-to-match: /api/**
       packages-to-scan: com.store.tracker.visits.controller
+
+app:
+  admin:
+    username: ${ADMIN_USERNAME:admin}
+    # Intentionally empty rather than defaulted: ApplicationProperties rejects a
+    # blank password at startup with a clear binding error.
+    password: ${ADMIN_PASSWORD:}

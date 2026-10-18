@@ -1,0 +1,17 @@
+# Profile used by the automated test suite.
+#
+# It deliberately requires no ambient environment variables: credentials and JPA
+# settings are fixed here, so a fresh clone can run `mvn verify` as-is.
+#
+# Integration tests override the datasource with Testcontainers
+# (@ServiceConnection) and therefore run against PostgreSQL, not H2.
+app:
+  admin:
+    username: admin
+    password: test-password
+
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false

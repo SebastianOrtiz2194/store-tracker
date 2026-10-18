@@ -17,7 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
 @Import(JpaConfig.class)
-@ActiveProfiles("dev")
+@ActiveProfiles("test")
 public class VisitRepositoryTest {
 
     @Autowired
