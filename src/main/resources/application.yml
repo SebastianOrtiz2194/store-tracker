@@ -8,6 +8,11 @@ spring:
     serialization:
       write-dates-as-timestamps: false
 
+  jpa:
+    # Fail loudly when lazy loading happens outside a transaction instead of
+    # silently relying on the Open Session In View anti-pattern.
+    open-in-view: false
+
 server:
   compression:
     enabled: true
