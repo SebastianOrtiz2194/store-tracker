@@ -153,11 +153,23 @@ All endpoints live under `/api/visits` and require HTTP Basic auth. Responses fo
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `POST` | `/api/visits/enter` | Register a customer entry |
-| `PUT` | `/api/visits/{id}/leave` | Register exit with purchased items |
+| `POST` | `/api/visits/enter` | Register a customer entry (`201` + `Location`) |
+| `PUT` | `/api/visits/{id}/leave` | Register exit with purchased items; the total is derived from the items (`409` if the visit is already closed) |
 | `GET` | `/api/visits/{id}` | Fetch a single visit by ID |
-| `GET` | `/api/visits` | Full visit history (optionally filtered by `?from=` and `?to=` ISO-8601 timestamps on `entryTime`) |
+| `GET` | `/api/visits` | Full visit history; `?from=` and `?to=` are optional and may be supplied independently |
 | `GET` | `/api/visits/active` | Visitors currently inside the store |
+
+### Status Codes
+
+| Status | When |
+|--------|------|
+| `201` | A visit was created |
+| `400` | Invalid body, invalid id, or an inverted date range |
+| `401` | Missing or invalid credentials |
+| `404` | Unknown visit or unknown path |
+| `409` | The visit is already closed |
+| `415` | The request body is not JSON |
+| `500` | Unexpected failure; the message carries a reference id and the details stay in the logs |
 
 ### Response Envelope
 
@@ -169,7 +181,8 @@ All endpoints live under `/api/visits` and require HTTP Basic auth. Responses fo
 }
 ```
 
-Errors use the same envelope with `success: false` and a `null` data payload.
+Errors use the same envelope with `success: false` and a `null` data payload, except
+for validation errors, where `data` maps each offending field to its message.
 
 ### Examples
 
@@ -190,10 +203,12 @@ curl -u admin:devpass -X PUT http://localhost:8080/api/visits/1/leave \
     "purchasedItems": [
       {"name":"Coffee","price":3.5,"quantity":1},
       {"name":"Croissant","price":2.0,"quantity":2}
-    ],
-    "totalSpent": 7.5
+    ]
   }'
 ```
+
+The amount spent is not sent by the client: the server derives it from the line
+items, so a visit's revenue cannot be declared from outside.
 
 **List active visits**
 
@@ -214,15 +229,15 @@ curl -u admin:devpass "http://localhost:8080/api/visits?from=2024-01-01T00:00:00
 
 ## Testing
 
-The project ships with a 31-test suite covering the three layers, architecture enforcement and an end-to-end journey:
+The project ships with a 47-test suite covering the three layers, architecture enforcement and an end-to-end journey:
 
 | Test class | Slice | What it covers |
 |------------|-------|----------------|
 | `ModularityTests` | ArchUnit | Module boundary enforcement (no cycles, valid dependencies) |
-| `VisitControllerTest` | `@WebMvcTest` | Endpoint behavior, request validation, security (401/404 paths) |
-| `VisitServiceImplTest` | Mockito + AssertJ | Service logic, exception paths, list-returning methods |
-| `VisitRepositoryTest` | `@DataJpaTest` | `findAll`, `findByExitTimeIsNull`, `save`, empty-list edges |
-| `VisitsApiIntegrationTest` | `@SpringBootTest` + Testcontainers | Entry → exit → history and 401 handling against real PostgreSQL |
+| `VisitControllerTest` | `@WebMvcTest` | Endpoint behavior, validation, error mapping (400/401/404/409/415/500), security |
+| `VisitServiceImplTest` | Mockito + AssertJ | Service logic, derived totals, one-sided date ranges, exception paths |
+| `VisitRepositoryTest` | `@DataJpaTest` | `findAll`, active visits, save, and one-sided/bounded entry-time queries |
+| `VisitsApiIntegrationTest` | `@SpringBootTest` + Testcontainers | Entry → exit → history, 409 on a second exit, 401 handling, real PostgreSQL |
 
 Run the full suite:
 

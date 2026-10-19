@@ -64,7 +64,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"purchasedItems\": [\n        {\n            \"name\": \"Blue Shirt\",\n            \"price\": 45.00,\n            \"quantity\": 1\n        },\n        {\n            \"name\": \"Jeans\",\n            \"price\": 30.90,\n            \"quantity\": 1\n        }\n    ],\n    \"totalSpent\": 75.90\n}",
+					"raw": "{\n    \"purchasedItems\": [\n        {\n            \"name\": \"Blue Shirt\",\n            \"price\": 45.00,\n            \"quantity\": 1\n        },\n        {\n            \"name\": \"Jeans\",\n            \"price\": 30.90,\n            \"quantity\": 1\n        }\n    ]\n}",
 					"options": {
 						"raw": {
 							"language": "json"
