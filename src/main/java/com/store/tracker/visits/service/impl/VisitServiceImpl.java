@@ -1,11 +1,11 @@
 package com.store.tracker.visits.service.impl;
 
+import com.store.tracker.exception.VisitNotFoundException;
 import com.store.tracker.visits.dto.VisitEntryRequest;
 import com.store.tracker.visits.dto.VisitLeaveRequest;
 import com.store.tracker.visits.dto.VisitResponse;
 import com.store.tracker.visits.entity.PurchasedItem;
 import com.store.tracker.visits.entity.Visit;
-import com.store.tracker.exception.VisitNotFoundException;
 import com.store.tracker.visits.mapper.PurchasedItemMapper;
 import com.store.tracker.visits.mapper.VisitMapper;
 import com.store.tracker.visits.repository.VisitRepository;
@@ -21,6 +21,9 @@ import java.util.List;
 /**
  * Service layer implementation for visit management. Coordinates persistence
  * and mapping between {@link Visit} entities and the corresponding DTOs.
+ *
+ * <p>All business rules live in the {@link Visit} aggregate; this class only
+ * loads, delegates, persists and maps.
  */
 @Service
 public class VisitServiceImpl implements VisitService {
@@ -51,43 +54,33 @@ public class VisitServiceImpl implements VisitService {
 
     /**
      * Closes an open visit by stamping its exit time and attaching the purchased
-     * items reported in the request. Any items previously associated with the
-     * visit are replaced by the new set.
+     * items reported in the request. The total spent is derived from those items.
      *
      * @param id      the identifier of the visit to close
-     * @param request the leave request carrying the purchased items and total spent
+     * @param request the leave request carrying the purchased items
      * @return the updated visit as a response DTO
-     * @throws VisitNotFoundException if no visit exists with the given {@code id}
+     * @throws VisitNotFoundException       if no visit exists with the given {@code id}
+     * @throws com.store.tracker.exception.VisitAlreadyClosedException if the visit is already closed
      */
     @Override
     @Transactional
     public VisitResponse registerExit(Long id, VisitLeaveRequest request) {
         log.info("Registering exit for visit ID: {}", id);
-        return visitRepository.findById(id).map(visit -> {
-            visit.setExitTime(LocalDateTime.now());
-
-            // Clear existing items before attaching new ones
-            int itemsCount = request.purchasedItems() != null ? request.purchasedItems().size() : 0;
-            log.debug("Associating {} items with visit ID: {}", itemsCount, id);
-
-            visit.getPurchasedItems().clear();
-
-            // Map and attach new items
-            if (request.purchasedItems() != null) {
-                request.purchasedItems().forEach(itemDto -> {
-                    PurchasedItem item = PurchasedItemMapper.toEntity(itemDto, visit);
-                    visit.addPurchasedItem(item);
+        Visit visit = visitRepository.findById(id)
+                .orElseThrow(() -> {
+                    log.warn("Failed to register exit: Visit ID {} not found", id);
+                    return new VisitNotFoundException(id);
                 });
-            }
 
-            visit.setTotalSpent(request.totalSpent());
-            Visit updatedVisit = visitRepository.save(visit);
-            log.info("Exit processed for visit ID: {}. Total: {}", id, updatedVisit.getTotalSpent());
-            return VisitMapper.toResponse(updatedVisit);
-        }).orElseThrow(() -> {
-            log.warn("Failed to register exit: Visit ID {} not found", id);
-            return new VisitNotFoundException("Visit not found with ID: " + id);
-        });
+        List<PurchasedItem> items = request.purchasedItems().stream()
+                .map(PurchasedItemMapper::toEntity)
+                .toList();
+        log.debug("Associating {} items with visit ID: {}", items.size(), id);
+
+        visit.close(LocalDateTime.now(), items);
+        Visit updatedVisit = visitRepository.save(visit);
+        log.info("Exit processed for visit ID: {} total={}", id, updatedVisit.getTotalSpent());
+        return VisitMapper.toResponse(updatedVisit);
     }
 
     /**
@@ -105,14 +98,13 @@ public class VisitServiceImpl implements VisitService {
                 .map(VisitMapper::toResponse)
                 .orElseThrow(() -> {
                     log.warn("Visit not found with ID: {}", id);
-                    return new VisitNotFoundException("Visit not found with ID: " + id);
+                    return new VisitNotFoundException(id);
                 });
     }
 
     /**
      * Returns every visit recorded in the system, both active and completed,
      * optionally filtered by an inclusive {@code entryTime} range.
-     * When both bounds are {@code null}, every visit is returned.
      *
      * @param from the inclusive lower bound of the entry time range, or {@code null} for no lower bound
      * @param to   the inclusive upper bound of the entry time range, or {@code null} for no upper bound

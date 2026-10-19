@@ -2,7 +2,6 @@ package com.store.tracker.visits.mapper;
 
 import com.store.tracker.visits.dto.PurchasedItemDto;
 import com.store.tracker.visits.entity.PurchasedItem;
-import com.store.tracker.visits.entity.Visit;
 
 import java.util.List;
 
@@ -41,14 +40,14 @@ public class PurchasedItemMapper {
     }
 
     /**
-     * Converts a {@link PurchasedItemDto} to a new entity linked to the given visit.
+     * Converts a {@link PurchasedItemDto} to a new, still detached entity. The
+     * owning visit is attached when the item is added to the visit aggregate.
      *
-     * @param dto   the DTO to convert; may be {@code null}
-     * @param visit the visit the resulting entity will belong to
+     * @param dto the DTO to convert; may be {@code null}
      * @return the new entity, or {@code null} when the DTO is {@code null}
      */
-    public static PurchasedItem toEntity(PurchasedItemDto dto, Visit visit) {
+    public static PurchasedItem toEntity(PurchasedItemDto dto) {
         if (dto == null) return null;
-        return new PurchasedItem(dto.name(), dto.price(), dto.quantity(), visit);
+        return new PurchasedItem(dto.name(), dto.price(), dto.quantity());
     }
 }

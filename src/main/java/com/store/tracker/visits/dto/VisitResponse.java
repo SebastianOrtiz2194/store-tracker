@@ -1,5 +1,6 @@
 package com.store.tracker.visits.dto;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -12,8 +13,8 @@ import java.util.List;
  * @param personName     the visitor's name
  * @param entryTime      the time the visitor entered the store
  * @param exitTime       the time the visitor left the store; {@code null} if still inside
- * @param purchasedItems the items bought during the visit; may be {@code null} when omitted
- * @param totalSpent     the total amount spent; {@code null} until the visit has an exit
+ * @param purchasedItems the items bought during the visit; empty while the visitor is inside
+ * @param totalSpent     the derived amount spent; {@code null} until the visit has an exit
  */
 public record VisitResponse(
     Long id,
@@ -21,10 +22,10 @@ public record VisitResponse(
     LocalDateTime entryTime,
     LocalDateTime exitTime,
     List<PurchasedItemDto> purchasedItems,
-    Double totalSpent
+    BigDecimal totalSpent
 ) {
     /**
-     * Compact constructor used for entry-only responses, where exit and purchases
+     * Convenience constructor for entry-only responses, where exit and purchases
      * are not yet known.
      *
      * @param id         the visit's database identifier

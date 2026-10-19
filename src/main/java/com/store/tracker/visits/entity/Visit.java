@@ -1,14 +1,18 @@
 package com.store.tracker.visits.entity;
 
+import com.store.tracker.exception.VisitAlreadyClosedException;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Represents a customer visit to the store, tracking entry/exit times,
@@ -16,6 +20,10 @@ import java.util.List;
  *
  * <p>Uses {@link AuditingEntityListener} to automatically populate
  * {@code createdAt} and {@code updatedAt} timestamps.
+ *
+ * <p>The exit timestamp and the total spent can only change through
+ * {@link #close(LocalDateTime, List)}, which enforces the rule that a visit is
+ * closed at most once and derives the total from the purchased lines.
  */
 @Getter
 @Setter
@@ -41,13 +49,16 @@ public class Visit {
     @Column(nullable = false)
     private LocalDateTime entryTime;
 
+    @Setter(AccessLevel.NONE)
     private LocalDateTime exitTime;
 
     @OneToMany(mappedBy = "visit", cascade = CascadeType.ALL, orphanRemoval = true)
     @Setter(AccessLevel.NONE)
     private List<PurchasedItem> purchasedItems = new ArrayList<>();
 
-    private Double totalSpent;
+    @Column(precision = 12, scale = 2)
+    @Setter(AccessLevel.NONE)
+    private BigDecimal totalSpent;
 
     @CreatedDate
     @Column(nullable = false, updatable = false)
@@ -69,11 +80,44 @@ public class Visit {
     }
 
     /**
+     * Closes this visit exactly once: stamps the exit time, replaces any
+     * purchased items with the supplied ones and derives the total spent from
+     * their line totals.
+     *
+     * @param at    the time the visitor left the store
+     * @param items the purchased items of this visit; may be empty but not {@code null}
+     * @throws VisitAlreadyClosedException if the visit has already been closed
+     */
+    public void close(LocalDateTime at, List<PurchasedItem> items) {
+        Objects.requireNonNull(at, "at");
+        Objects.requireNonNull(items, "items");
+        if (isClosed()) {
+            throw new VisitAlreadyClosedException(id);
+        }
+
+        this.exitTime = at;
+        this.purchasedItems.clear();
+        items.forEach(this::addPurchasedItem);
+        this.totalSpent = items.stream()
+                .map(PurchasedItem::lineTotal)
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .setScale(2, RoundingMode.HALF_UP);
+    }
+
+    /**
+     * @return {@code true} when the visitor has already left the store
+     */
+    public boolean isClosed() {
+        return exitTime != null;
+    }
+
+    /**
      * Adds a purchased item to this visit, maintaining the bidirectional relationship.
      *
      * @param item the item to add; must not be {@code null}
      */
     public void addPurchasedItem(PurchasedItem item) {
+        Objects.requireNonNull(item, "item");
         purchasedItems.add(item);
         item.setVisit(this);
     }

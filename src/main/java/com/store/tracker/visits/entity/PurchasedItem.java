@@ -6,7 +6,10 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 /**
  * Represents an item purchased during a visit, including the product name,
@@ -14,6 +17,9 @@ import java.time.LocalDateTime;
  *
  * <p>Uses {@link AuditingEntityListener} to automatically populate
  * {@code createdAt} and {@code updatedAt} timestamps.
+ *
+ * <p>The price is an immutable snapshot of the unit price at purchase time, so a
+ * later price change never alters an existing receipt.
  */
 @Getter
 @Setter
@@ -33,8 +39,8 @@ public class PurchasedItem {
     @Column(nullable = false)
     private String name;
 
-    @Column(nullable = false)
-    private Double price;
+    @Column(nullable = false, precision = 12, scale = 2)
+    private BigDecimal price;
 
     @Column(nullable = false)
     private Integer quantity;
@@ -55,14 +61,21 @@ public class PurchasedItem {
 
     /**
      * @param name     the product name
-     * @param price    the unit price
+     * @param price    the unit price; must not be {@code null}
      * @param quantity the quantity purchased
-     * @param visit    the parent visit; must not be {@code null}
      */
-    public PurchasedItem(String name, Double price, Integer quantity, Visit visit) {
+    public PurchasedItem(String name, BigDecimal price, Integer quantity) {
         this.name = name;
-        this.price = price;
+        this.price = Objects.requireNonNull(price, "price").setScale(2, RoundingMode.HALF_UP);
         this.quantity = quantity;
-        this.visit = visit;
+    }
+
+    /**
+     * Computes this line's contribution to the visit total.
+     *
+     * @return {@code price × quantity}, never {@code null}
+     */
+    public BigDecimal lineTotal() {
+        return price.multiply(BigDecimal.valueOf(quantity));
     }
 }
