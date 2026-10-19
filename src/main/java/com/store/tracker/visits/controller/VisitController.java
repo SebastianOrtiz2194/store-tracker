@@ -10,9 +10,11 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URI;
 import java.util.List;
 
 /**
@@ -36,24 +38,28 @@ public class VisitController {
         summary = "Register entry",
         description = "Creates a new visit record when a person enters the store"
     )
-    @ApiResponse(responseCode = "200", description = "Entry registered successfully")
+    @ApiResponse(responseCode = "201", description = "Entry registered successfully")
     @ApiResponse(responseCode = "400", description = "Invalid request payload")
     public ResponseEntity<ResponseEnvelope<VisitResponse>> registerEntry(@Valid @RequestBody VisitEntryRequest request) {
         VisitResponse response = visitService.registerEntry(request);
-        return ResponseEntity.ok(ResponseEnvelope.success(response, "Entry registered successfully"));
+        return ResponseEntity
+                .created(URI.create("/api/visits/" + response.id()))
+                .body(ResponseEnvelope.success(response, "Entry registered successfully"));
     }
 
     @PutMapping("/{id}/leave")
     @Operation(
         operationId = "registerExit",
         summary = "Register exit and purchases",
-        description = "Updates an existing visit with exit time and purchased items"
+        description = "Updates an existing visit with exit time and purchased items. The total spent is derived from the items."
     )
     @ApiResponse(responseCode = "200", description = "Exit registered successfully")
     @ApiResponse(responseCode = "400", description = "Invalid request payload")
     @ApiResponse(responseCode = "404", description = "Visit not found")
+    @ApiResponse(responseCode = "409", description = "Visit is already closed")
     public ResponseEntity<ResponseEnvelope<VisitResponse>> registerExit(
-            @Parameter(description = "Unique visit ID") @PathVariable Long id,
+            @Parameter(description = "Unique visit ID")
+            @PathVariable @Positive(message = "Visit ID must be positive") Long id,
             @Valid @RequestBody VisitLeaveRequest request) {
 
         VisitResponse response = visitService.registerExit(id, request);
@@ -67,9 +73,11 @@ public class VisitController {
         description = "Returns a single visit identified by its unique ID"
     )
     @ApiResponse(responseCode = "200", description = "Visit found")
+    @ApiResponse(responseCode = "400", description = "Invalid visit ID")
     @ApiResponse(responseCode = "404", description = "Visit not found")
     public ResponseEntity<ResponseEnvelope<VisitResponse>> getVisitById(
-            @Parameter(description = "Unique visit ID") @PathVariable Long id) {
+            @Parameter(description = "Unique visit ID")
+            @PathVariable @Positive(message = "Visit ID must be positive") Long id) {
         VisitResponse visit = visitService.getVisitById(id);
         return ResponseEntity.ok(ResponseEnvelope.success(visit, "Visit retrieved successfully"));
     }
@@ -78,9 +86,10 @@ public class VisitController {
     @Operation(
         operationId = "getAllVisits",
         summary = "Get full history",
-        description = "Returns all visits recorded in the system, both active and completed. Optionally filtered by an inclusive entry-time range."
+        description = "Returns all visits recorded in the system, both active and completed. Optionally filtered by an inclusive entry-time range; either bound may be supplied on its own."
     )
     @ApiResponse(responseCode = "200", description = "Visit list retrieved")
+    @ApiResponse(responseCode = "400", description = "Invalid date range")
     public ResponseEntity<ResponseEnvelope<List<VisitResponse>>> getAllVisits(
             @Parameter(description = "Inclusive lower bound of entry time (ISO-8601, e.g. 2024-01-01T00:00:00)")
             @RequestParam(required = false) java.time.LocalDateTime from,
