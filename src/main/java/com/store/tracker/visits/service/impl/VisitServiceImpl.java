@@ -1,5 +1,6 @@
 package com.store.tracker.visits.service.impl;
 
+import com.store.tracker.exception.InvalidDateRangeException;
 import com.store.tracker.exception.VisitNotFoundException;
 import com.store.tracker.visits.dto.VisitEntryRequest;
 import com.store.tracker.visits.dto.VisitLeaveRequest;
@@ -104,22 +105,42 @@ public class VisitServiceImpl implements VisitService {
 
     /**
      * Returns every visit recorded in the system, both active and completed,
-     * optionally filtered by an inclusive {@code entryTime} range.
+     * optionally filtered by an inclusive {@code entryTime} range. Either bound
+     * may be omitted; supplying both requires {@code from <= to}.
      *
      * @param from the inclusive lower bound of the entry time range, or {@code null} for no lower bound
      * @param to   the inclusive upper bound of the entry time range, or {@code null} for no upper bound
      * @return the list of visits; never {@code null}
+     * @throws InvalidDateRangeException if both bounds are present and {@code from > to}
      */
     @Override
     @Transactional(readOnly = true)
     public List<VisitResponse> getAllVisits(LocalDateTime from, LocalDateTime to) {
         log.debug("Fetching visits with from={}, to={}", from, to);
-        List<Visit> visits = (from != null && to != null)
-                ? visitRepository.findByEntryTimeBetween(from, to)
-                : visitRepository.findAll();
-        return visits.stream()
+        return findVisits(from, to).stream()
                 .map(VisitMapper::toResponse)
                 .toList();
+    }
+
+    /**
+     * Applies whichever bounds were supplied instead of silently ignoring a
+     * one-sided range.
+     */
+    private List<Visit> findVisits(LocalDateTime from, LocalDateTime to) {
+        if (from != null && to != null) {
+            if (from.isAfter(to)) {
+                log.warn("Rejecting inverted date range from={}, to={}", from, to);
+                throw new InvalidDateRangeException(from, to);
+            }
+            return visitRepository.findByEntryTimeBetween(from, to);
+        }
+        if (from != null) {
+            return visitRepository.findByEntryTimeGreaterThanEqual(from);
+        }
+        if (to != null) {
+            return visitRepository.findByEntryTimeLessThanEqual(to);
+        }
+        return visitRepository.findAll();
     }
 
     /**

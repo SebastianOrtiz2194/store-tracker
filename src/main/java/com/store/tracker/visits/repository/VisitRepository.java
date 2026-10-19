@@ -30,4 +30,20 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
      * @return the list of visits in the range; never {@code null}
      */
     List<Visit> findByEntryTimeBetween(LocalDateTime from, LocalDateTime to);
+
+    /**
+     * Returns all visits that entered at or after {@code from}.
+     *
+     * @param from the inclusive lower bound of the entry time range
+     * @return the list of visits in the range; never {@code null}
+     */
+    List<Visit> findByEntryTimeGreaterThanEqual(LocalDateTime from);
+
+    /**
+     * Returns all visits that entered at or before {@code to}.
+     *
+     * @param to the inclusive upper bound of the entry time range
+     * @return the list of visits in the range; never {@code null}
+     */
+    List<Visit> findByEntryTimeLessThanEqual(LocalDateTime to);
 }
