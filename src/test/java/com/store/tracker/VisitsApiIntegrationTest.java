@@ -6,8 +6,10 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -65,7 +67,7 @@ class VisitsApiIntegrationTest {
 
         ResponseEntity<Map> entry = client.postForEntity(
                 "/api/visits/enter", Map.of("personName", "Ana Integration"), Map.class);
-        assertThat(entry.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(entry.getStatusCode()).isEqualTo(HttpStatus.CREATED);
 
         Map<String, Object> entryData = data(entry);
         long visitId = ((Number) entryData.get("id")).longValue();
@@ -74,14 +76,21 @@ class VisitsApiIntegrationTest {
         assertThat(activeVisits(client)).hasSize(1);
 
         var leaveRequest = Map.of(
-                "purchasedItems", List.of(Map.of("name", "Coffee", "price", 3.5, "quantity", 2)),
-                "totalSpent", 7.0);
+                "purchasedItems", List.of(Map.of("name", "Coffee", "price", 3.5, "quantity", 2)));
+        var jsonHeaders = new HttpHeaders();
+        jsonHeaders.setContentType(MediaType.APPLICATION_JSON);
         ResponseEntity<Map> exit = client.exchange(
-                "/api/visits/{id}/leave", HttpMethod.PUT, new HttpEntity<>(leaveRequest), Map.class, visitId);
+                "/api/visits/{id}/leave", HttpMethod.PUT,
+                new HttpEntity<>(leaveRequest, jsonHeaders), Map.class, visitId);
         assertThat(exit.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(data(exit).get("totalSpent")).isEqualTo(7.0);
+        assertThat(((Number) data(exit).get("totalSpent")).doubleValue()).isEqualTo(7.0);
 
         assertThat(activeVisits(client)).isEmpty();
+
+        ResponseEntity<Map> secondExit = client.exchange(
+                "/api/visits/{id}/leave", HttpMethod.PUT,
+                new HttpEntity<>(leaveRequest, jsonHeaders), Map.class, visitId);
+        assertThat(secondExit.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
 
         ResponseEntity<Map> history = client.getForEntity(
                 "/api/visits?from={from}", Map.class, LocalDateTime.now().minusDays(1).toString());
