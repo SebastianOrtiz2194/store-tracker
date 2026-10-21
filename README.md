@@ -22,6 +22,7 @@ The service is organized as a [Spring Modulith](https://spring.io/projects/sprin
 - **Java 21** (LTS)
 - **Spring Boot 3.2.3** — Web, Data JPA, Validation, Security, Actuator
 - **Spring Data JPA** with H2 (dev) / PostgreSQL 16 (postgres, prod)
+- **Flyway** — versioned schema migrations, `ddl-auto: validate` everywhere
 - **Spring Security** — stateless HTTP Basic
 - **Bean Validation** (Jakarta / JSR-380)
 - **springdoc-openapi 2.3.0** — OpenAPI 3 / Swagger UI
@@ -50,15 +51,20 @@ Dependencies all flow inward: `visits` depends on `config`, `dto`, and `exceptio
 src/main/java/com/store/tracker/
 ├── TrackerApplication.java
 ├── config/{ApplicationProperties, JpaConfig, SecurityConfig}.java
-├── dto/{ResponseEnvelope}.java
-├── exception/{GlobalExceptionHandler, VisitNotFoundException}.java
+├── dto/{PageResponse, ResponseEnvelope}.java
+├── exception/{GlobalExceptionHandler, InvalidDateRangeException,
+│              VisitAlreadyClosedException, VisitNotFoundException}.java
 └── visits/
     ├── controller/VisitController.java
     ├── service/{VisitService, impl/VisitServiceImpl}.java
-    ├── repository/VisitRepository.java
+    ├── repository/{VisitRepository, VisitSpecifications}.java
     ├── entity/{Visit, PurchasedItem}.java
-    ├── dto/{PurchasedItemDto, VisitEntryRequest, VisitLeaveRequest, VisitResponse}.java
-    └── mapper/{VisitMapper, PurchasedItemMapper}.java
+    ├── dto/{PurchasedItemDto, VisitEntryRequest, VisitLeaveRequest,
+    │        VisitResponse, VisitSummaryResponse}.java
+    └── mapper/{VisitMapper, VisitSummaryMapper, PurchasedItemMapper}.java
+
+src/main/resources/db/migration/
+└── V1__baseline.sql
 
 src/test/java/com/store/tracker/
 ├── ModularityTests.java
@@ -119,9 +125,9 @@ DB_PASSWORD=tracker-secret \
 mvn spring-boot:run -Dspring-boot.run.profiles=prod
 ```
 
-> The `prod` profile validates the schema (`ddl-auto: validate`) and expects it to
-> already exist. Versioned migrations are not in place yet, so provision the schema
-> before the first start; the `postgres` profile is the one that creates it locally.
+> Flyway applies the migrations on startup in every profile, so `postgres` and
+> `prod` create the schema automatically. Hibernate runs with `ddl-auto: validate`
+> and only verifies that the entity mapping matches the migrated schema.
 
 ## Configuration
 
@@ -137,14 +143,15 @@ All credentials are environment-driven. There are no default secrets. A
 | `DB_USERNAME` | yes (`postgres`/`prod`) | `tracker` (`postgres` only) | Database user |
 | `DB_PASSWORD` | yes (`postgres`/`prod`) | `tracker` (`postgres` only) | Database password |
 | `DB_PORT` | no | `5432` | Host port published by Docker Compose |
+| `DB_POOL_SIZE` | no | `10` | HikariCP maximum pool size |
 | `H2_PASSWORD` | no | `password` | H2 password (dev only) |
 | `PORT` | no (prod) | `8080` | HTTP listen port |
 
 ### Profiles
 
-- **`dev`** — H2 in-memory, SQL logging, H2 console enabled
-- **`postgres`** — local PostgreSQL from `docker-compose.yml`, `ddl-auto: update`
-- **`prod`** — PostgreSQL, `ddl-auto: validate`
+- **`dev`** — H2 in-memory, Flyway migrations, SQL logging, H2 console enabled
+- **`postgres`** — local PostgreSQL from `docker-compose.yml`, Flyway migrations
+- **`prod`** — PostgreSQL, Flyway migrations, `ddl-auto: validate`
 - **`local`** — personal overrides via gitignored `application-local.yml`
 
 ## API
@@ -156,7 +163,7 @@ All endpoints live under `/api/visits` and require HTTP Basic auth. Responses fo
 | `POST` | `/api/visits/enter` | Register a customer entry (`201` + `Location`) |
 | `PUT` | `/api/visits/{id}/leave` | Register exit with purchased items; the total is derived from the items (`409` if the visit is already closed) |
 | `GET` | `/api/visits/{id}` | Fetch a single visit by ID |
-| `GET` | `/api/visits` | Full visit history; `?from=` and `?to=` are optional and may be supplied independently |
+| `GET` | `/api/visits` | Paginated visit history (`?page=`, `?size=`, `?sort=`); `?from=` and `?to=` are optional and may be supplied independently |
 | `GET` | `/api/visits/active` | Visitors currently inside the store |
 
 ### Status Codes
@@ -167,7 +174,7 @@ All endpoints live under `/api/visits` and require HTTP Basic auth. Responses fo
 | `400` | Invalid body, invalid id, or an inverted date range |
 | `401` | Missing or invalid credentials |
 | `404` | Unknown visit or unknown path |
-| `409` | The visit is already closed |
+| `409` | The visit is already closed, or was modified concurrently |
 | `415` | The request body is not JSON |
 | `500` | Unexpected failure; the message carries a reference id and the details stay in the logs |
 
@@ -222,6 +229,28 @@ curl -u admin:devpass http://localhost:8080/api/visits/active
 curl -u admin:devpass "http://localhost:8080/api/visits?from=2024-01-01T00:00:00&to=2024-12-31T23:59:59"
 ```
 
+**Page through the history**
+
+```bash
+curl -u admin:devpass "http://localhost:8080/api/visits?page=0&size=20&sort=entryTime,desc"
+```
+
+The response is a page object:
+
+```json
+{
+  "items": [ { "id": 1, "personName": "Maria Gomez", "entryTime": "…", "exitTime": "…", "totalSpent": 7.50 } ],
+  "page": 0,
+  "size": 20,
+  "totalElements": 1,
+  "totalPages": 1,
+  "hasNext": false
+}
+```
+
+`size` is capped at 100 by the server. List results omit `purchasedItems`; fetch
+`GET /api/visits/{id}` to get a visit with its line items.
+
 ### Interactive Documentation
 
 - Swagger UI: <http://localhost:8080/swagger-ui.html>
@@ -229,14 +258,14 @@ curl -u admin:devpass "http://localhost:8080/api/visits?from=2024-01-01T00:00:00
 
 ## Testing
 
-The project ships with a 47-test suite covering the three layers, architecture enforcement and an end-to-end journey:
+The project ships with a 50-test suite covering the three layers, architecture enforcement and an end-to-end journey:
 
 | Test class | Slice | What it covers |
 |------------|-------|----------------|
 | `ModularityTests` | ArchUnit | Module boundary enforcement (no cycles, valid dependencies) |
-| `VisitControllerTest` | `@WebMvcTest` | Endpoint behavior, validation, error mapping (400/401/404/409/415/500), security |
-| `VisitServiceImplTest` | Mockito + AssertJ | Service logic, derived totals, one-sided date ranges, exception paths |
-| `VisitRepositoryTest` | `@DataJpaTest` | `findAll`, active visits, save, and one-sided/bounded entry-time queries |
+| `VisitControllerTest` | `@WebMvcTest` | Endpoint behavior, validation, error mapping (400/401/404/409/415/500), pagination caps, security |
+| `VisitServiceImplTest` | Mockito + AssertJ | Service logic, derived totals, stable sort, exception paths |
+| `VisitRepositoryTest` | `@DataJpaTest` | Flyway schema, specifications, version increment, query count (no N+1) |
 | `VisitsApiIntegrationTest` | `@SpringBootTest` + Testcontainers | Entry → exit → history, 409 on a second exit, 401 handling, real PostgreSQL |
 
 Run the full suite:
@@ -254,6 +283,7 @@ Docker is unavailable, so offline development still works.
 - **H2 Console (dev only)** — <http://localhost:8080/h2-console>. JDBC URL `jdbc:h2:mem:storedb`, user `sa`, password from `H2_PASSWORD`.
 - **Actuator health** — <http://localhost:8080/actuator/health>. Unauthenticated.
 - **Database drivers** — the executable jar bundles both H2 and the PostgreSQL driver so one artifact can run in `dev`, `postgres` and `prod`. The `prod` profile never opens H2; excluding the H2 jar from a production-only build is tracked as a container-hardening task.
+- **Schema migrations** — Flyway runs `src/main/resources/db/migration` on startup in every profile. Add a new `V<n>__<description>.sql` file; never edit an applied migration, and keep `ddl-auto: validate` so a mapping drift fails the boot instead of corrupting data.
 - **Postman collection** — `Store_Tracker_Postman_Collection.json` for quick API exploration. Update credentials to match the running instance.
 
 ## Roadmap
