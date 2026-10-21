@@ -1,9 +1,11 @@
 package com.store.tracker.visits.controller;
 
+import com.store.tracker.dto.PageResponse;
 import com.store.tracker.dto.ResponseEnvelope;
 import com.store.tracker.visits.dto.VisitEntryRequest;
 import com.store.tracker.visits.dto.VisitLeaveRequest;
 import com.store.tracker.visits.dto.VisitResponse;
+import com.store.tracker.visits.dto.VisitSummaryResponse;
 import com.store.tracker.visits.service.VisitService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -11,10 +13,14 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -86,16 +92,17 @@ public class VisitController {
     @Operation(
         operationId = "getAllVisits",
         summary = "Get full history",
-        description = "Returns all visits recorded in the system, both active and completed. Optionally filtered by an inclusive entry-time range; either bound may be supplied on its own."
+        description = "Returns a page of the visit history, both active and completed. Optionally filtered by an inclusive entry-time range; either bound may be supplied on its own."
     )
-    @ApiResponse(responseCode = "200", description = "Visit list retrieved")
-    @ApiResponse(responseCode = "400", description = "Invalid date range")
-    public ResponseEntity<ResponseEnvelope<List<VisitResponse>>> getAllVisits(
+    @ApiResponse(responseCode = "200", description = "Visit page retrieved")
+    @ApiResponse(responseCode = "400", description = "Invalid date range or sort property")
+    public ResponseEntity<ResponseEnvelope<PageResponse<VisitSummaryResponse>>> getAllVisits(
             @Parameter(description = "Inclusive lower bound of entry time (ISO-8601, e.g. 2024-01-01T00:00:00)")
-            @RequestParam(required = false) java.time.LocalDateTime from,
+            @RequestParam(required = false) LocalDateTime from,
             @Parameter(description = "Inclusive upper bound of entry time (ISO-8601, e.g. 2024-12-31T23:59:59)")
-            @RequestParam(required = false) java.time.LocalDateTime to) {
-        List<VisitResponse> visits = visitService.getAllVisits(from, to);
+            @RequestParam(required = false) LocalDateTime to,
+            @PageableDefault(size = 20, sort = "entryTime", direction = Sort.Direction.DESC) Pageable pageable) {
+        PageResponse<VisitSummaryResponse> visits = visitService.getAllVisits(from, to, pageable);
         return ResponseEntity.ok(ResponseEnvelope.success(visits, "Visit list retrieved"));
     }
 
