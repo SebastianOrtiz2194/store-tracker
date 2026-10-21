@@ -34,12 +34,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * automatically when no Docker daemon is available, so it never blocks a
  * developer working offline; CI runs it against the default PostgreSQL image.
  */
-@SpringBootTest(
-        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-        properties = {
-                "spring.jpa.hibernate.ddl-auto=create-drop",
-                "spring.jpa.show-sql=false"
-        })
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
 @Testcontainers(disabledWithoutDocker = true)
 class VisitsApiIntegrationTest {
@@ -94,7 +89,8 @@ class VisitsApiIntegrationTest {
 
         ResponseEntity<Map> history = client.getForEntity(
                 "/api/visits?from={from}", Map.class, LocalDateTime.now().minusDays(1).toString());
-        List<Object> visits = items(history);
+        assertThat(((Number) data(history).get("totalElements")).longValue()).isEqualTo(1);
+        List<Object> visits = pageItems(history);
         assertThat(visits).anySatisfy(visit -> assertThat(((Number) ((Map<?, ?>) visit).get("id")).longValue())
                 .isEqualTo(visitId));
     }
@@ -118,5 +114,10 @@ class VisitsApiIntegrationTest {
     @SuppressWarnings("unchecked")
     private static List<Object> items(ResponseEntity<Map> response) {
         return (List<Object>) response.getBody().get("data");
+    }
+
+    @SuppressWarnings("unchecked")
+    private static List<Object> pageItems(ResponseEntity<Map> response) {
+        return (List<Object>) data(response).get("items");
     }
 }

@@ -1,14 +1,22 @@
 package com.store.tracker.visits.repository;
 
 import com.store.tracker.config.JpaConfig;
+import com.store.tracker.visits.entity.PurchasedItem;
 import com.store.tracker.visits.entity.Visit;
+import jakarta.persistence.EntityManagerFactory;
+import org.hibernate.Hibernate;
+import org.hibernate.SessionFactory;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.test.context.ActiveProfiles;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -26,8 +34,11 @@ class VisitRepositoryTest {
     @Autowired
     private VisitRepository visitRepository;
 
+    @Autowired
+    private EntityManagerFactory entityManagerFactory;
+
     @Test
-    void whenFindByExitTimeIsNull_thenReturnActiveVisits() {
+    void whenFindActiveWithItems_thenReturnOnlyOpenVisits() {
         Visit activeVisit = new Visit("Carlos", LocalDateTime.now());
         entityManager.persist(activeVisit);
 
@@ -37,7 +48,7 @@ class VisitRepositoryTest {
 
         entityManager.flush();
 
-        List<Visit> foundVisits = visitRepository.findByExitTimeIsNull();
+        List<Visit> foundVisits = visitRepository.findActiveWithItems();
 
         assertThat(foundVisits)
                 .hasSize(1)
@@ -48,10 +59,8 @@ class VisitRepositoryTest {
     }
 
     @Test
-    void whenFindByExitTimeIsNullAndNoVisitsExist_thenReturnEmptyList() {
-        List<Visit> foundVisits = visitRepository.findByExitTimeIsNull();
-
-        assertThat(foundVisits).isNotNull().isEmpty();
+    void whenFindActiveWithItemsAndNoVisitsExist_thenReturnEmptyList() {
+        assertThat(visitRepository.findActiveWithItems()).isNotNull().isEmpty();
     }
 
     @Test
@@ -77,9 +86,7 @@ class VisitRepositoryTest {
 
     @Test
     void whenFindAllAndNoVisitsExist_thenReturnEmptyList() {
-        List<Visit> allVisits = visitRepository.findAll();
-
-        assertThat(allVisits).isNotNull().isEmpty();
+        assertThat(visitRepository.findAll()).isNotNull().isEmpty();
     }
 
     @Test
@@ -101,14 +108,28 @@ class VisitRepositoryTest {
     }
 
     @Test
-    void whenFindByEntryTimeGreaterThanEqual_thenReturnVisitsFromBoundOnward() {
+    void whenFindWithItemsById_thenPurchasedItemsAreLoaded() {
+        Visit visit = new Visit("Lucia", LocalDateTime.now());
+        visit.addPurchasedItem(new PurchasedItem("Coffee", new BigDecimal("3.50"), 2));
+        entityManager.persist(visit);
+        entityManager.flush();
+        entityManager.clear();
+
+        Visit found = visitRepository.findWithItemsById(visit.getId()).orElseThrow();
+
+        assertThat(found.getPurchasedItems()).hasSize(1);
+        assertThat(Hibernate.isInitialized(found.getPurchasedItems())).isTrue();
+    }
+
+    @Test
+    void whenFilteringFromOnly_thenReturnVisitsFromBoundOnward() {
         LocalDateTime base = LocalDateTime.of(2024, 6, 1, 12, 0);
         persist("Early", base.minusDays(1));
         persist("Boundary", base);
         persist("Late", base.plusDays(1));
         entityManager.flush();
 
-        List<Visit> found = visitRepository.findByEntryTimeGreaterThanEqual(base);
+        List<Visit> found = visitRepository.findAll(VisitSpecifications.enteredBetween(base, null));
 
         assertThat(found)
                 .extracting(Visit::getPersonName)
@@ -116,14 +137,14 @@ class VisitRepositoryTest {
     }
 
     @Test
-    void whenFindByEntryTimeLessThanEqual_thenReturnVisitsUpToBound() {
+    void whenFilteringToOnly_thenReturnVisitsUpToBound() {
         LocalDateTime base = LocalDateTime.of(2024, 6, 1, 12, 0);
         persist("Early", base.minusDays(1));
         persist("Boundary", base);
         persist("Late", base.plusDays(1));
         entityManager.flush();
 
-        List<Visit> found = visitRepository.findByEntryTimeLessThanEqual(base);
+        List<Visit> found = visitRepository.findAll(VisitSpecifications.enteredBetween(null, base));
 
         assertThat(found)
                 .extracting(Visit::getPersonName)
@@ -131,7 +152,7 @@ class VisitRepositoryTest {
     }
 
     @Test
-    void whenFindByEntryTimeBetween_thenReturnOnlyVisitsInsideRange() {
+    void whenFilteringBothBounds_thenReturnOnlyVisitsInsideRange() {
         LocalDateTime from = LocalDateTime.of(2024, 6, 1, 0, 0);
         LocalDateTime to = LocalDateTime.of(2024, 6, 30, 23, 59);
         persist("Before", from.minusDays(1));
@@ -139,11 +160,49 @@ class VisitRepositoryTest {
         persist("After", to.plusDays(1));
         entityManager.flush();
 
-        List<Visit> found = visitRepository.findByEntryTimeBetween(from, to);
+        List<Visit> found = visitRepository.findAll(VisitSpecifications.enteredBetween(from, to));
 
         assertThat(found)
                 .extracting(Visit::getPersonName)
                 .containsExactly("Inside");
+    }
+
+    @Test
+    void whenClosingAVisit_thenVersionIncrements() {
+        Visit visit = new Visit("Concurrent", LocalDateTime.now().minusHours(1));
+        entityManager.persistAndFlush(visit);
+        Long initialVersion = visit.getVersion();
+
+        visit.close(LocalDateTime.now(), List.of());
+        entityManager.flush();
+
+        assertThat(initialVersion).isNotNull();
+        assertThat(visit.getVersion()).isGreaterThan(initialVersion);
+    }
+
+    @Test
+    void whenListingAPage_thenPurchasedItemsAreNotLoaded() {
+        LocalDateTime now = LocalDateTime.now();
+        for (int i = 0; i < 10; i++) {
+            Visit visit = new Visit("Visitor " + i, now.minusMinutes(i));
+            visit.addPurchasedItem(new PurchasedItem("Item", new BigDecimal("1.00"), 1));
+            entityManager.persist(visit);
+        }
+        entityManager.flush();
+        entityManager.clear();
+
+        var statistics = entityManagerFactory.unwrap(SessionFactory.class).getStatistics();
+        statistics.clear();
+
+        Page<Visit> page = visitRepository.findAll(
+                VisitSpecifications.enteredBetween(null, null),
+                PageRequest.of(0, 5, Sort.by(Sort.Direction.DESC, "entryTime")));
+
+        assertThat(page.getContent()).hasSize(5);
+        // Exactly two statements: the count query and the page query.
+        assertThat(statistics.getPrepareStatementCount()).isLessThanOrEqualTo(3);
+        page.getContent().forEach(visit ->
+                assertThat(Hibernate.isInitialized(visit.getPurchasedItems())).isFalse());
     }
 
     private void persist(String personName, LocalDateTime entryTime) {

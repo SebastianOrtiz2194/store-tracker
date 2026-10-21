@@ -2,6 +2,7 @@ package com.store.tracker.visits.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.store.tracker.config.SecurityConfig;
+import com.store.tracker.dto.PageResponse;
 import com.store.tracker.exception.InvalidDateRangeException;
 import com.store.tracker.exception.VisitAlreadyClosedException;
 import com.store.tracker.exception.VisitNotFoundException;
@@ -9,13 +10,17 @@ import com.store.tracker.visits.dto.PurchasedItemDto;
 import com.store.tracker.visits.dto.VisitEntryRequest;
 import com.store.tracker.visits.dto.VisitLeaveRequest;
 import com.store.tracker.visits.dto.VisitResponse;
+import com.store.tracker.visits.dto.VisitSummaryResponse;
 import com.store.tracker.visits.service.VisitService;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
@@ -24,10 +29,12 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -49,6 +56,10 @@ class VisitControllerTest {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    private static PageResponse<VisitSummaryResponse> pageOf(VisitSummaryResponse... items) {
+        return new PageResponse<>(List.of(items), 0, 20, items.length, 1, false);
+    }
 
     @Test
     @WithMockUser(username = "admin", roles = {"ADMIN"})
@@ -171,36 +182,55 @@ class VisitControllerTest {
 
     @Test
     @WithMockUser(username = "admin", roles = {"ADMIN"})
-    void getAllVisits_ShouldReturn200WithList() throws Exception {
-        when(visitService.getAllVisits(any(), any()))
-                .thenReturn(List.of(new VisitResponse(1L, "Alice"), new VisitResponse(2L, "Bob")));
+    void getAllVisits_ShouldReturn200WithPage() throws Exception {
+        when(visitService.getAllVisits(any(), any(), any(Pageable.class)))
+                .thenReturn(pageOf(
+                        new VisitSummaryResponse(1L, "Alice", null, null, null),
+                        new VisitSummaryResponse(2L, "Bob", null, null, null)));
 
         mockMvc.perform(get("/api/visits"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.message").value("Visit list retrieved"))
-                .andExpect(jsonPath("$.data", org.hamcrest.Matchers.hasSize(2)))
-                .andExpect(jsonPath("$.data[0].personName").value("Alice"))
-                .andExpect(jsonPath("$.data[1].personName").value("Bob"));
+                .andExpect(jsonPath("$.data.items", org.hamcrest.Matchers.hasSize(2)))
+                .andExpect(jsonPath("$.data.items[0].personName").value("Alice"))
+                .andExpect(jsonPath("$.data.items[1].personName").value("Bob"))
+                .andExpect(jsonPath("$.data.totalElements").value(2))
+                .andExpect(jsonPath("$.data.page").value(0));
     }
 
     @Test
     @WithMockUser(username = "admin", roles = {"ADMIN"})
     void getAllVisits_WithDateRange_ShouldReturn200() throws Exception {
-        when(visitService.getAllVisits(any(), any())).thenReturn(List.of(new VisitResponse(1L, "In Range")));
+        when(visitService.getAllVisits(any(), any(), any(Pageable.class)))
+                .thenReturn(pageOf(new VisitSummaryResponse(1L, "In Range", null, null, null)));
 
         mockMvc.perform(get("/api/visits")
                         .param("from", "2024-01-01T00:00:00")
                         .param("to", "2024-12-31T23:59:59"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data", org.hamcrest.Matchers.hasSize(1)))
-                .andExpect(jsonPath("$.data[0].personName").value("In Range"));
+                .andExpect(jsonPath("$.data.items", org.hamcrest.Matchers.hasSize(1)))
+                .andExpect(jsonPath("$.data.items[0].personName").value("In Range"));
+    }
+
+    @Test
+    @WithMockUser(username = "admin", roles = {"ADMIN"})
+    void getAllVisits_WhenRequestedSizeIsHuge_ShouldCapIt() throws Exception {
+        when(visitService.getAllVisits(any(), any(), any(Pageable.class)))
+                .thenReturn(new PageResponse<>(List.of(), 0, 100, 0, 0, false));
+
+        mockMvc.perform(get("/api/visits").param("size", "1000"))
+                .andExpect(status().isOk());
+
+        ArgumentCaptor<Pageable> pageable = ArgumentCaptor.forClass(Pageable.class);
+        verify(visitService).getAllVisits(any(), any(), pageable.capture());
+        assertThat(pageable.getValue().getPageSize()).isEqualTo(100);
     }
 
     @Test
     @WithMockUser(username = "admin", roles = {"ADMIN"})
     void getAllVisits_WhenRangeIsInverted_ShouldReturn400() throws Exception {
-        when(visitService.getAllVisits(any(), any()))
+        when(visitService.getAllVisits(any(), any(), any(Pageable.class)))
                 .thenThrow(new InvalidDateRangeException("2024-02-01T00:00:00", "2024-01-01T00:00:00"));
 
         mockMvc.perform(get("/api/visits")
@@ -249,6 +279,17 @@ class VisitControllerTest {
 
     @Test
     @WithMockUser(username = "admin", roles = {"ADMIN"})
+    void getVisitById_WhenModifiedConcurrently_ShouldReturn409() throws Exception {
+        when(visitService.getVisitById(1L))
+                .thenThrow(new ObjectOptimisticLockingFailureException(Object.class, 1L));
+
+        mockMvc.perform(get("/api/visits/1"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.success").value(false));
+    }
+
+    @Test
+    @WithMockUser(username = "admin", roles = {"ADMIN"})
     void getVisitById_WhenIdIsNotNumeric_ShouldReturn400() throws Exception {
         mockMvc.perform(get("/api/visits/abc"))
                 .andExpect(status().isBadRequest())
@@ -292,7 +333,7 @@ class VisitControllerTest {
     @Test
     @WithMockUser(username = "admin", roles = {"ADMIN"})
     void getAllVisits_WhenUnexpectedFailure_ShouldReturn500WithoutLeakingDetails() throws Exception {
-        when(visitService.getAllVisits(any(), any()))
+        when(visitService.getAllVisits(any(), any(), any(Pageable.class)))
                 .thenThrow(new IllegalStateException("boom-database-credentials"));
 
         mockMvc.perform(get("/api/visits"))

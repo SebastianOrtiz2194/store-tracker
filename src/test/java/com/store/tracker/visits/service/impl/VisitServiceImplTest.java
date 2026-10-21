@@ -1,5 +1,6 @@
 package com.store.tracker.visits.service.impl;
 
+import com.store.tracker.dto.PageResponse;
 import com.store.tracker.exception.InvalidDateRangeException;
 import com.store.tracker.exception.VisitAlreadyClosedException;
 import com.store.tracker.exception.VisitNotFoundException;
@@ -7,14 +8,21 @@ import com.store.tracker.visits.dto.PurchasedItemDto;
 import com.store.tracker.visits.dto.VisitEntryRequest;
 import com.store.tracker.visits.dto.VisitLeaveRequest;
 import com.store.tracker.visits.dto.VisitResponse;
+import com.store.tracker.visits.dto.VisitSummaryResponse;
 import com.store.tracker.visits.entity.Visit;
 import com.store.tracker.visits.repository.VisitRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -30,6 +38,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
+@SuppressWarnings("unchecked")
 class VisitServiceImplTest {
 
     @Mock
@@ -63,7 +72,7 @@ class VisitServiceImplTest {
 
     @Test
     void registerExit_ShouldDeriveTotalFromLineItems() {
-        when(visitRepository.findById(1L)).thenReturn(Optional.of(openVisit));
+        when(visitRepository.findWithItemsById(1L)).thenReturn(Optional.of(openVisit));
         when(visitRepository.save(any(Visit.class))).thenReturn(openVisit);
 
         VisitLeaveRequest request = new VisitLeaveRequest(List.of(
@@ -79,13 +88,13 @@ class VisitServiceImplTest {
                 .extracting(PurchasedItemDto::name)
                 .containsExactly("Coffee", "Croissant");
 
-        verify(visitRepository).findById(1L);
+        verify(visitRepository).findWithItemsById(1L);
         verify(visitRepository).save(any(Visit.class));
     }
 
     @Test
     void registerExit_WithEmptyItems_ShouldTotalZero() {
-        when(visitRepository.findById(1L)).thenReturn(Optional.of(openVisit));
+        when(visitRepository.findWithItemsById(1L)).thenReturn(Optional.of(openVisit));
         when(visitRepository.save(any(Visit.class))).thenReturn(openVisit);
 
         VisitResponse response = visitService.registerExit(1L, new VisitLeaveRequest(List.of()));
@@ -98,31 +107,31 @@ class VisitServiceImplTest {
     @Test
     void registerExit_WhenAlreadyClosed_ShouldThrowAndNotSave() {
         openVisit.close(LocalDateTime.now(), List.of());
-        when(visitRepository.findById(1L)).thenReturn(Optional.of(openVisit));
+        when(visitRepository.findWithItemsById(1L)).thenReturn(Optional.of(openVisit));
 
         assertThatThrownBy(() -> visitService.registerExit(1L, new VisitLeaveRequest(List.of())))
                 .isInstanceOf(VisitAlreadyClosedException.class)
                 .hasMessageContaining("1");
 
-        verify(visitRepository).findById(1L);
+        verify(visitRepository).findWithItemsById(1L);
         verify(visitRepository, never()).save(any(Visit.class));
     }
 
     @Test
     void registerExit_WhenVisitDoesNotExist_ShouldThrow() {
-        when(visitRepository.findById(99L)).thenReturn(Optional.empty());
+        when(visitRepository.findWithItemsById(99L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> visitService.registerExit(99L, new VisitLeaveRequest(List.of())))
                 .isInstanceOf(VisitNotFoundException.class)
                 .hasMessageContaining("99");
 
-        verify(visitRepository).findById(99L);
+        verify(visitRepository).findWithItemsById(99L);
         verify(visitRepository, never()).save(any(Visit.class));
     }
 
     @Test
     void getVisitById_WhenVisitExists_ShouldReturnVisitResponse() {
-        when(visitRepository.findById(1L)).thenReturn(Optional.of(openVisit));
+        when(visitRepository.findWithItemsById(1L)).thenReturn(Optional.of(openVisit));
 
         VisitResponse response = visitService.getVisitById(1L);
 
@@ -131,68 +140,51 @@ class VisitServiceImplTest {
                 .extracting(VisitResponse::personName)
                 .isEqualTo("Juan Perez");
 
-        verify(visitRepository).findById(1L);
+        verify(visitRepository).findWithItemsById(1L);
     }
 
     @Test
     void getVisitById_WhenVisitDoesNotExist_ShouldThrowException() {
-        when(visitRepository.findById(99L)).thenReturn(Optional.empty());
+        when(visitRepository.findWithItemsById(99L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> visitService.getVisitById(99L))
                 .isInstanceOf(VisitNotFoundException.class)
                 .hasMessageContaining("99");
 
-        verify(visitRepository).findById(99L);
+        verify(visitRepository).findWithItemsById(99L);
     }
 
     @Test
-    void getAllVisits_WithoutBounds_ShouldReturnAll() {
-        when(visitRepository.findAll()).thenReturn(List.of(openVisit));
+    void getAllVisits_ShouldReturnPageWithStableSort() {
+        when(visitRepository.findAll(any(Specification.class), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(openVisit), PageRequest.of(0, 20), 1));
 
-        List<VisitResponse> responses = visitService.getAllVisits(null, null);
+        PageResponse<VisitSummaryResponse> response =
+                visitService.getAllVisits(null, null, PageRequest.of(0, 20));
 
-        assertThat(responses).hasSize(1);
-        verify(visitRepository).findAll();
-        verify(visitRepository, never()).findByEntryTimeBetween(any(), any());
+        assertThat(response.items()).hasSize(1);
+        assertThat(response.items().get(0).personName()).isEqualTo("Juan Perez");
+        assertThat(response.page()).isZero();
+        assertThat(response.totalElements()).isEqualTo(1);
+
+        ArgumentCaptor<Pageable> pageable = ArgumentCaptor.forClass(Pageable.class);
+        verify(visitRepository).findAll(any(Specification.class), pageable.capture());
+        assertThat(pageable.getValue().getSort())
+                .contains(Sort.Order.desc("entryTime"), Sort.Order.desc("id"));
     }
 
     @Test
-    void getAllVisits_WithFromOnly_ShouldApplyLowerBound() {
-        LocalDateTime from = LocalDateTime.of(2024, 1, 1, 0, 0);
-        when(visitRepository.findByEntryTimeGreaterThanEqual(from)).thenReturn(List.of(openVisit));
+    void getAllVisits_ShouldPreserveRequestedPageAndSize() {
+        when(visitRepository.findAll(any(Specification.class), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(openVisit), PageRequest.of(1, 10), 11));
 
-        List<VisitResponse> responses = visitService.getAllVisits(from, null);
+        PageResponse<VisitSummaryResponse> response =
+                visitService.getAllVisits(null, null, PageRequest.of(1, 10));
 
-        assertThat(responses).hasSize(1);
-        verify(visitRepository).findByEntryTimeGreaterThanEqual(from);
-        verify(visitRepository, never()).findAll();
-        verify(visitRepository, never()).findByEntryTimeLessThanEqual(any());
-    }
-
-    @Test
-    void getAllVisits_WithToOnly_ShouldApplyUpperBound() {
-        LocalDateTime to = LocalDateTime.of(2024, 12, 31, 23, 59);
-        when(visitRepository.findByEntryTimeLessThanEqual(to)).thenReturn(List.of(openVisit));
-
-        List<VisitResponse> responses = visitService.getAllVisits(null, to);
-
-        assertThat(responses).hasSize(1);
-        verify(visitRepository).findByEntryTimeLessThanEqual(to);
-        verify(visitRepository, never()).findAll();
-        verify(visitRepository, never()).findByEntryTimeGreaterThanEqual(any());
-    }
-
-    @Test
-    void getAllVisits_WithBothBounds_ShouldUseRange() {
-        LocalDateTime from = LocalDateTime.of(2024, 1, 1, 0, 0);
-        LocalDateTime to = LocalDateTime.of(2024, 12, 31, 23, 59);
-        when(visitRepository.findByEntryTimeBetween(from, to)).thenReturn(List.of(openVisit));
-
-        List<VisitResponse> responses = visitService.getAllVisits(from, to);
-
-        assertThat(responses).hasSize(1);
-        verify(visitRepository).findByEntryTimeBetween(from, to);
-        verify(visitRepository, never()).findAll();
+        assertThat(response.page()).isEqualTo(1);
+        assertThat(response.size()).isEqualTo(10);
+        assertThat(response.totalElements()).isEqualTo(11);
+        assertThat(response.hasNext()).isFalse();
     }
 
     @Test
@@ -200,7 +192,7 @@ class VisitServiceImplTest {
         LocalDateTime from = LocalDateTime.of(2024, 2, 1, 0, 0);
         LocalDateTime to = LocalDateTime.of(2024, 1, 1, 0, 0);
 
-        assertThatThrownBy(() -> visitService.getAllVisits(from, to))
+        assertThatThrownBy(() -> visitService.getAllVisits(from, to, PageRequest.of(0, 20)))
                 .isInstanceOf(InvalidDateRangeException.class)
                 .hasMessageContaining("from");
 
@@ -211,7 +203,7 @@ class VisitServiceImplTest {
     void getActiveVisits_ShouldReturnOnlyVisitsWithoutExitTime() {
         Visit activeVisit = new Visit("Active Visitor", LocalDateTime.now());
         activeVisit.setId(10L);
-        when(visitRepository.findByExitTimeIsNull()).thenReturn(List.of(activeVisit));
+        when(visitRepository.findActiveWithItems()).thenReturn(List.of(activeVisit));
 
         List<VisitResponse> responses = visitService.getActiveVisits();
 
@@ -220,16 +212,16 @@ class VisitServiceImplTest {
                 .extracting(VisitResponse::personName)
                 .containsExactly("Active Visitor");
 
-        verify(visitRepository).findByExitTimeIsNull();
+        verify(visitRepository).findActiveWithItems();
     }
 
     @Test
     void getActiveVisits_WhenNoActiveVisitsExist_ShouldReturnEmptyList() {
-        when(visitRepository.findByExitTimeIsNull()).thenReturn(List.of());
+        when(visitRepository.findActiveWithItems()).thenReturn(List.of());
 
         List<VisitResponse> responses = visitService.getActiveVisits();
 
         assertThat(responses).isNotNull().isEmpty();
-        verify(visitRepository).findByExitTimeIsNull();
+        verify(visitRepository).findActiveWithItems();
     }
 }
