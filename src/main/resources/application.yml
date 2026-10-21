@@ -8,10 +8,24 @@ spring:
     serialization:
       write-dates-as-timestamps: false
 
+  datasource:
+    hikari:
+      maximum-pool-size: ${DB_POOL_SIZE:10}
+      connection-timeout: 3000
+
   jpa:
+    # The schema is owned by Flyway; Hibernate only verifies that the mapping
+    # matches it. This applies to every profile, including dev and tests.
+    hibernate:
+      ddl-auto: validate
     # Fail loudly when lazy loading happens outside a transaction instead of
     # silently relying on the Open Session In View anti-pattern.
     open-in-view: false
+
+  flyway:
+    enabled: true
+    clean-disabled: true
+    locations: classpath:db/migration
 
 server:
   compression:

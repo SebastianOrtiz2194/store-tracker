@@ -42,6 +42,11 @@
             <artifactId>postgresql</artifactId>
             <scope>runtime</scope>
         </dependency>
+        <!-- Flyway owns the schema; Hibernate only validates it -->
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+        </dependency>
         <!-- Bean Validation (Jakarta / JSR-380) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

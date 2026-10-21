@@ -27,7 +27,9 @@ import java.util.Objects;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @ToString(exclude = "visit")
 @Entity
-@Table(name = "purchased_items")
+@Table(name = "purchased_items", indexes = {
+    @Index(name = "idx_purchased_items_visit", columnList = "visit_id")
+})
 @EntityListeners(AuditingEntityListener.class)
 public class PurchasedItem {
 

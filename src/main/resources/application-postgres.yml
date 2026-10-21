@@ -12,6 +12,4 @@ spring:
     password: ${DB_PASSWORD:tracker}
 
   jpa:
-    hibernate:
-      ddl-auto: update
     show-sql: false

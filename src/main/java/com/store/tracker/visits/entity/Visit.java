@@ -32,8 +32,8 @@ import java.util.Objects;
 @ToString(exclude = "purchasedItems")
 @Entity
 @Table(name = "visits", indexes = {
-    @Index(name = "idx_person_name", columnList = "personName"),
-    @Index(name = "idx_entry_time", columnList = "entryTime")
+    @Index(name = "idx_visits_entry_time", columnList = "entryTime"),
+    @Index(name = "idx_visits_exit_time", columnList = "exitTime")
 })
 @EntityListeners(AuditingEntityListener.class)
 public class Visit {
@@ -59,6 +59,14 @@ public class Visit {
     @Column(precision = 12, scale = 2)
     @Setter(AccessLevel.NONE)
     private BigDecimal totalSpent;
+
+    /**
+     * Optimistic-locking token. Two concurrent exits cannot both succeed: the
+     * second flush fails and is reported as {@code 409 Conflict}.
+     */
+    @Version
+    @Column(nullable = false)
+    private Long version;
 
     @CreatedDate
     @Column(nullable = false, updatable = false)

@@ -3,6 +3,7 @@
 # It deliberately requires no ambient environment variables: credentials and JPA
 # settings are fixed here, so a fresh clone can run `mvn verify` as-is.
 #
+# The schema is created by Flyway from the same migrations used in production.
 # Integration tests override the datasource with Testcontainers
 # (@ServiceConnection) and therefore run against PostgreSQL, not H2.
 app:
@@ -12,6 +13,7 @@ app:
 
 spring:
   jpa:
-    hibernate:
-      ddl-auto: create-drop
     show-sql: false
+    properties:
+      hibernate:
+        generate_statistics: true
