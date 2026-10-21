@@ -4,6 +4,8 @@ import com.store.tracker.dto.ResponseEnvelope;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.data.mapping.PropertyReferenceException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -182,6 +184,31 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     protected ResponseEntity<Object> handleNoHandlerFoundException(
             NoHandlerFoundException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
         return body(HttpStatus.NOT_FOUND, "Resource not found");
+    }
+
+    /**
+     * Handles a concurrent modification detected by optimistic locking (409).
+     *
+     * @param ex the raised exception
+     * @return an error envelope
+     */
+    @ExceptionHandler(OptimisticLockingFailureException.class)
+    public ResponseEntity<ResponseEnvelope<Void>> handleOptimisticLock(OptimisticLockingFailureException ex) {
+        log.warn("optimistic_lock_failure message={}", ex.getMessage());
+        return envelope(HttpStatus.CONFLICT,
+                "The visit was modified concurrently. Reload it and retry.");
+    }
+
+    /**
+     * Handles a sort parameter that does not name a sortable property (400).
+     *
+     * @param ex the raised exception
+     * @return an error envelope
+     */
+    @ExceptionHandler(PropertyReferenceException.class)
+    public ResponseEntity<ResponseEnvelope<Void>> handleUnknownSortProperty(PropertyReferenceException ex) {
+        log.warn("unknown_sort_property property={}", ex.getPropertyName());
+        return envelope(HttpStatus.BAD_REQUEST, "Unknown sort property: " + ex.getPropertyName());
     }
 
     /**
