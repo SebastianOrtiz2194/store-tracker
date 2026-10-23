@@ -81,7 +81,7 @@ password so the suite never depends on ambient environment variables.
 ## Prerequisites
 
 - JDK 21 or newer
-- Maven 3.8 or newer
+- Maven 3.8 or newer (not required when using the included Maven Wrapper)
 - Docker (optional: local PostgreSQL and the integration test)
 
 ## Quick Start
@@ -89,15 +89,17 @@ password so the suite never depends on ambient environment variables.
 ### Build and test
 
 ```bash
-mvn clean test
+./mvnw clean test
 ```
+
+> On Linux/macOS, if `mvnw` loses its executable bit after cloning, run `chmod +x mvnw` once.
 
 ### Run in dev mode
 
 In-memory H2 database, SQL logging enabled, H2 web console at `/h2-console`.
 
 ```bash
-ADMIN_PASSWORD=devpass mvn spring-boot:run -Dspring-boot.run.profiles=dev
+ADMIN_PASSWORD=devpass ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
 ```
 
 ### Run against PostgreSQL locally
@@ -106,7 +108,7 @@ Start PostgreSQL 16 with Docker Compose, then boot the app with the `postgres` p
 
 ```bash
 docker compose up -d postgres
-SPRING_PROFILES_ACTIVE=postgres ADMIN_PASSWORD=devpass mvn spring-boot:run
+SPRING_PROFILES_ACTIVE=postgres ADMIN_PASSWORD=devpass ./mvnw spring-boot:run
 ```
 
 Credentials match `docker-compose.yml`; override `DB_URL`, `DB_USERNAME` and
